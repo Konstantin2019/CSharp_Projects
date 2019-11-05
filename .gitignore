@@ -261,3 +261,4 @@ __pycache__/
 *.pyc
 /VkBot/VkBot/Properties
 /VkBot/VkBot.sln
+/VkBot/VkProvider/Properties
