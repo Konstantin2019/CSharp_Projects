@@ -38,47 +38,33 @@ namespace VkBot
             if (!valid)
             {
                 var token_uri = token_tb.Text;
+                var saving_path = "token.txt";
 
                 if (token_uri != null && token_uri.Length > 100)
                 {
                     
-                    var token = await vkService.GetTokenAsync(token_uri);
+                    var token = await vkService.GetTokenAsync(token_uri, saving_path);
                     if (token.Error != null)
                         MessageBox.Show(token.Error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     else
                     {
-                        await vkService.SaveAsync("token.txt", token.Value);
-                        var users = await vkService.GetUsersAsync();
+                        var message = Message_box.Text;
 
-                        if (users.Error != null)
-                            MessageBox.Show(users.Error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                        if (message != null && message.Length > 5)
+                            responses = await vkService.SendAsync(message);
                         else
-                        {
-                            var message = Message_box.Text;
-
-                            if (message != null && message.Length > 5)
-                                responses = await vkService.SendAsync(message);
-                            else
-                                MessageBox.Show("Сообщение пустое или слишком короткое!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
+                            MessageBox.Show("Сообщение пустое или слишком короткое!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
             else
             {
-                var users = await vkService.GetUsersAsync();
+                var message = Message_box.Text;
 
-                if (users.Error != null)
-                    MessageBox.Show(users.Error, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (message != null && message.Length > 5)
+                    responses = await vkService.SendAsync(message);
                 else
-                {
-                    var message = Message_box.Text;
-
-                    if (message != null && message.Length > 5)
-                        responses = await vkService.SendAsync(message);
-                    else
-                        MessageBox.Show("Сообщение пустое или слишком короткое!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                    MessageBox.Show("Сообщение пустое или слишком короткое!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

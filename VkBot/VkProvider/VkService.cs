@@ -49,7 +49,7 @@ namespace VkBot
         #endregion
 
         #region GetAccessTokenAsync
-        public async Task<Response<Dictionary<string, string>>> GetTokenAsync(string uri)
+        public async Task<Response<Dictionary<string, string>>> GetTokenAsync(string uri, string saving_path)
         {
             var token_info = new Dictionary<string, string>();
 
@@ -75,6 +75,7 @@ namespace VkBot
                     access_token = token_info["access_token" + $"_{group_id}"];
                 });
 
+                await SaveAsync(saving_path, token_info);
                 return new Response<Dictionary<string, string>> { Value = token_info, Error = null };
             }
             catch (Exception error)
@@ -85,7 +86,7 @@ namespace VkBot
         #endregion
 
         #region SaveOnDiskAsync
-        public async Task<bool> SaveAsync(string token_path, Dictionary<string, string> token_info)
+        private async Task<bool> SaveAsync(string token_path, Dictionary<string, string> token_info)
         {
             using (StreamWriter wr = new StreamWriter(token_path))
             {
@@ -108,7 +109,7 @@ namespace VkBot
         #endregion
 
         #region ReadFromDiskAsync
-        public async Task<Dictionary<string, string>> ReadAsync(string path)
+        private async Task<Dictionary<string, string>> ReadAsync(string path)
         {
             if (!File.Exists(path)) return null;
 
@@ -164,7 +165,7 @@ namespace VkBot
         #endregion
 
         #region GetTargetMembersAsync
-        public async Task<Response<Dictionary<int, string>>> GetUsersAsync()
+        private async Task<Response<Dictionary<int, string>>> GetUsersAsync()
         {
             var get_managers_request = method
                                        + "groups.getMembers"
@@ -224,10 +225,10 @@ namespace VkBot
             Dictionary<int, string> users = new Dictionary<int, string>();
 
             var get_response = await GetUsersAsync();
-            if (get_response != null && get_response.Error == null)
-                users = get_response.Value;
-            else
+            if (get_response.Error != null)
                 return new string[1] { get_response.Error };
+            else
+                users = get_response.Value;
 
             var send_message_request = method
                                        + "messages.send"
