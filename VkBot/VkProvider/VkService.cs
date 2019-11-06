@@ -31,11 +31,9 @@ namespace VkBot
             friends, photos, audio, video, messages
         }
 
-        #region GetAccessTokenAsync
-        public async Task<Response<Dictionary<string, string>>> GetTokenAsync(Func<string> func)
+        #region GetAccessTokenUriAsync
+        public async Task GetAccessTokenUriAsync()
         {
-            var token_info = new Dictionary<string, string>();
-
             var auth_request = base_uri
                                + $"client_id={client_id}&"
                                + $"group_ids={group_id}&"
@@ -46,14 +44,20 @@ namespace VkBot
                                + "response_type=token&"
                                + $"v={api_version}&"
                                + "state=0";
+            await Task.Run(() => { Process.Start(auth_request); });
+        }
+        #endregion
+
+        #region GetAccessTokenAsync
+        public async Task<Response<Dictionary<string, string>>> GetTokenAsync(string uri)
+        {
+            var token_info = new Dictionary<string, string>();
 
             try
             {
                 await Task.Run(() => 
                 {
-                    Process.Start(auth_request);
-                    var response = func();
-                    var split = response.Split('&', '#');
+                    var split = uri.Split('&', '#');
 
                     foreach (var i in split)
                     {

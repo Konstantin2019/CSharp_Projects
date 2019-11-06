@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VkBot"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800"
+        Loaded="Window_Loaded">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60*"/>
@@ -19,18 +20,22 @@
                         Margin="0,5,0,0">
                 <TextBlock Text="Access_token : " 
                            FontSize="16"/>
-                <TextBox MinWidth="360"
+                <TextBox Name="token_tb" 
+                         MinWidth="360"
                          FontSize="16"/>
             </StackPanel>
             <Separator Margin="0,5,0,0"/>
-            <TextBox MinHeight="340"
+            <TextBox Name="Message_box"
+                     MinHeight="340"
                      Margin="0,5,0,0"/>
-            <Button Height="30"
+            <Button Name="Send_btn"
+                    Height="30"
                     Margin="0,5,0,0"
                     Content="Начать рассылку"
                     FontSize="16"/>
         </StackPanel>
-        <ListView Grid.Column="1"
+        <ListView Name="Response_view"
+                  Grid.Column="1"
                   Margin="5"/>
     </Grid>
 </Window>
