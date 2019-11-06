@@ -32,7 +32,7 @@
                     Height="30"
                     Margin="0,5,0,0"
                     Content="Начать рассылку"
-                    FontSize="16"/>
+                    FontSize="16" Click="Send_btn_Click"/>
         </StackPanel>
         <ListView Name="Response_view"
                   Grid.Column="1"
