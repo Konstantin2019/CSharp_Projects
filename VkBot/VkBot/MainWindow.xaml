@@ -5,9 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VkBot"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        Loaded="Window_Loaded">
-    <Grid>
+        Title="MainWindow" Height="450" Width="800">
+    
+    <Window.Resources>
+        <local:ViewModel x:Key="view_model"/>
+    </Window.Resources>
+    
+    <Grid DataContext="{StaticResource view_model}"
+          Name="MainGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60*"/>
             <ColumnDefinition Width="40*"/>
@@ -22,20 +27,23 @@
                            FontSize="16"/>
                 <TextBox Name="token_tb" 
                          MinWidth="360"
-                         FontSize="16"/>
+                         FontSize="16"
+                         Text="{Binding Path=Token_uri}"/>
             </StackPanel>
             <Separator Margin="0,5,0,0"/>
             <TextBox Name="Message_box"
                      MinHeight="340"
-                     Margin="0,5,0,0"/>
+                     Margin="0,5,0,0"
+                     Text="{Binding Path=Message}"/>
             <Button Name="Send_btn"
                     Height="30"
                     Margin="0,5,0,0"
                     Content="Начать рассылку"
-                    FontSize="16" Click="Send_btn_Click"/>
+                    FontSize="16"/>
         </StackPanel>
         <ListView Name="Response_view"
                   Grid.Column="1"
-                  Margin="5"/>
+                  Margin="5"
+                  ItemsSource="{Binding Path=Responses}"/>
     </Grid>
 </Window>
