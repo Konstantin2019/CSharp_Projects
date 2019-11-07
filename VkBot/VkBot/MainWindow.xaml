@@ -6,13 +6,8 @@
         xmlns:local="clr-namespace:VkBot"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    
-    <Window.Resources>
-        <local:ViewModel x:Key="view_model"/>
-    </Window.Resources>
-    
-    <Grid DataContext="{StaticResource view_model}"
-          Name="MainGrid">
+
+    <Grid Name="MainGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60*"/>
             <ColumnDefinition Width="40*"/>
@@ -25,25 +20,23 @@
                         Margin="0,5,0,0">
                 <TextBlock Text="Access_token : " 
                            FontSize="16"/>
-                <TextBox Name="token_tb" 
+                <TextBox Name="token_tb"
                          MinWidth="360"
-                         FontSize="16"
-                         Text="{Binding Path=Token_uri}"/>
+                         FontSize="16"/>
             </StackPanel>
             <Separator Margin="0,5,0,0"/>
-            <TextBox Name="Message_box"
+            <TextBox Name="message_tb"
                      MinHeight="340"
                      Margin="0,5,0,0"
-                     Text="{Binding Path=Message}"/>
+                     FontSize="16"/>
             <Button Name="Send_btn"
                     Height="30"
                     Margin="0,5,0,0"
                     Content="Начать рассылку"
                     FontSize="16"/>
         </StackPanel>
-        <ListView Name="Response_view"
+        <ListView Name="response_view"
                   Grid.Column="1"
-                  Margin="5"
-                  ItemsSource="{Binding Path=Responses}"/>
+                  Margin="5"/>
     </Grid>
 </Window>

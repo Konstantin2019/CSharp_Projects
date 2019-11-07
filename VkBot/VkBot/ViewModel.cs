@@ -40,6 +40,8 @@ namespace VkBot
                     else
                         await SendAction();
                 }
+                else
+                    MessageBox.Show("Token_uri пустой или слишком короткий!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else
                 await SendAction();
