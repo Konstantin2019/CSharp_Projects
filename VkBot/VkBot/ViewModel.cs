@@ -5,6 +5,9 @@ using System.Windows;
 
 namespace VkBot
 {
+    /// <summary>
+    /// Класс, выполняющий функции контроллера по взаимодействию пользовательского интерфейса с VkProvider
+    /// </summary>
     public class ViewModel
     {
         private static VkService vkService = new VkService();
