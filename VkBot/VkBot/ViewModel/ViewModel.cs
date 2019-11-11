@@ -2,33 +2,44 @@
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
-namespace VkBot
+namespace VkBot.ViewModel
 {
     /// <summary>
     /// Класс, выполняющий функции контроллера по взаимодействию пользовательского интерфейса с VkProvider
     /// </summary>
     public class ViewModel
     {
-        private static VkService vkService = new VkService();
-
+        private static VkService vkService;
         private bool valid;
-        private string saving_path = "token.txt";
+
+        const string saving_path = "token.txt";
 
         public string Token_uri { get; set; }
         public string Message { get; set; }
+        public ICollection<string> Responses { get; private set; }
 
-        public ICollection<string> Responses { get; set; } = new ObservableCollection<string>();
+        public ICommand ValidateTokenAsync { get; }
+        public ICommand SendMessageAsync { get; }
 
-        public async void ValidateTokenAsync(object sender, RoutedEventArgs e)
+        public ViewModel()
         {
-            valid = await vkService.ValidateAsync("token.txt");
+            vkService = new VkService();
+            Responses = new ObservableCollection<string>();
+            ValidateTokenAsync = new RelayCommand(OnValidateTokenAsyncExecute);
+            SendMessageAsync = new RelayCommand(OnSendMessageAsyncExecute);
+        }
+
+        public async void OnValidateTokenAsyncExecute(object obj)
+        {
+            valid = await vkService.ValidateAsync(saving_path);
 
             if (!valid)
                 await vkService.GetAccessTokenUriAsync();
         }
 
-        public async void SendMessageAsync(object sender, RoutedEventArgs e)
+        public async void OnSendMessageAsyncExecute(object obj)
         {
             if (!valid)
             {

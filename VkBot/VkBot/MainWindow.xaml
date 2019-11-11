@@ -3,15 +3,26 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:VkBot"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:v="clr-namespace:VkBot.ViewModel"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-
-    <Grid Name="MainGrid">
+    
+    <Window.Resources>
+        <v:ViewModel x:Key="view_model"/>
+    </Window.Resources>
+    
+    <Grid Name="MainGrid"
+          DataContext="{StaticResource view_model}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60*"/>
             <ColumnDefinition Width="40*"/>
         </Grid.ColumnDefinitions>
+        <i:Interaction.Triggers>
+            <i:EventTrigger EventName="Loaded">
+                <i:InvokeCommandAction Command="{Binding Path=ValidateTokenAsync}"/>
+            </i:EventTrigger>
+        </i:Interaction.Triggers>
         <StackPanel Grid.Column="0"
                     Orientation="Vertical"
                     VerticalAlignment="Top"
@@ -20,22 +31,22 @@
                         Margin="0,5,0,0">
                 <TextBlock Text="Access_token : " 
                            FontSize="16"/>
-                <TextBox Name="token_tb"
+                <TextBox Text="{Binding Path=Token_uri}"
                          MinWidth="360"
                          FontSize="16"/>
             </StackPanel>
             <Separator Margin="0,5,0,0"/>
-            <TextBox Name="message_tb"
+            <TextBox Text="{Binding Path=Message}"
                      MinHeight="340"
                      Margin="0,5,0,0"
                      FontSize="16"/>
-            <Button Name="Send_btn"
+            <Button Command="{Binding Path=SendMessageAsync}"
                     Height="30"
                     Margin="0,5,0,0"
                     Content="Начать рассылку"
                     FontSize="16"/>
         </StackPanel>
-        <ListView Name="response_view"
+        <ListView ItemsSource="{Binding Path=Responses}"
                   Grid.Column="1"
                   Margin="5"/>
     </Grid>
