@@ -188,6 +188,12 @@ namespace VkBot
             {
                 var json_managers = await Utilities.GetJObjectAsync(get_managers_request);
 
+                if (json_managers.Value.ContainsKey("error"))
+                {
+                    var error = (string)json_managers.Value["error"]["error_msg"];
+                    return new Response<Dictionary<int, string>> { Value = null, Error = error };
+                }
+
                 var count = (int)json_managers.Value["response"]["count"];
                 var managers = new Dictionary<int, string>();
                 for (int i = 0; i < count; i++)
@@ -220,13 +226,13 @@ namespace VkBot
         #endregion
 
         #region SendMessagesAsync
-        public async Task<ICollection<string>> SendAsync(string message)
+        public async Task<List<string>> SendAsync(string message)
         {
             Dictionary<int, string> users = new Dictionary<int, string>();
 
             var get_response = await GetUsersAsync();
             if (get_response.Error != null)
-                return new string[1] { get_response.Error };
+                return new List<string>() { get_response.Error };
             else
                 users = get_response.Value;
 
@@ -243,7 +249,7 @@ namespace VkBot
                 { "access_token", access_token}
             };
 
-            ICollection<string> post_responses = new List<string>();
+            List<string> post_responses = new List<string>();
             var rnd = new Random();
 
             foreach (var user in users)

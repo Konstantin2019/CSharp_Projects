@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -18,7 +17,7 @@ namespace VkBot.ViewModel
 
         public string Token_uri { get; set; }
         public string Message { get; set; }
-        public ICollection<string> Responses { get; private set; }
+        public ObservableCollection<string> Responses { get; private set; }
 
         public ICommand ValidateTokenAsync { get; }
         public ICommand SendMessageAsync { get; }
@@ -27,11 +26,11 @@ namespace VkBot.ViewModel
         {
             vkService = new VkService();
             Responses = new ObservableCollection<string>();
-            ValidateTokenAsync = new RelayCommand(OnValidateTokenAsyncExecute);
-            SendMessageAsync = new RelayCommand(OnSendMessageAsyncExecute);
+            ValidateTokenAsync = new RelayCommand(OnValidateTokenAsyncExecuted);
+            SendMessageAsync = new RelayCommand(OnSendMessageAsyncExecuted);
         }
 
-        public async void OnValidateTokenAsyncExecute(object obj)
+        public async void OnValidateTokenAsyncExecuted(object obj)
         {
             valid = await vkService.ValidateAsync(saving_path);
 
@@ -39,7 +38,7 @@ namespace VkBot.ViewModel
                 await vkService.GetAccessTokenUriAsync();
         }
 
-        public async void OnSendMessageAsyncExecute(object obj)
+        public async void OnSendMessageAsyncExecuted(object obj)
         {
             if (!valid)
             {
@@ -61,7 +60,12 @@ namespace VkBot.ViewModel
         private async Task SendAction()
         {
             if (Message != null && Message.Length > 5)
-                Responses = await vkService.SendAsync(Message);
+            {
+                var responses = await vkService.SendAsync(Message);
+                foreach (var response in responses)
+                    Responses.Add(response);
+            }
+                
             else
                 MessageBox.Show("Сообщение пустое или слишком короткое!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
