@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -8,13 +9,24 @@ namespace VkBot.ViewModel
     /// <summary>
     /// Класс, выполняющий функции контроллера по взаимодействию пользовательского интерфейса с VkProvider
     /// </summary>
-    public class ViewModel
+    public class ViewModel : INotifyPropertyChanged
     {
         private static VkService vkService;
         private bool valid;
+        private bool sendButtonIsEnabled;
 
         const string saving_path = "token.txt";
 
+        public bool SendButtonIsEnabled
+        {
+            get => sendButtonIsEnabled;
+            set
+            {
+                sendButtonIsEnabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SendButtonIsEnabled"));
+            }
+        }
+        
         public string Token_uri { get; set; }
         public string Message { get; set; }
         public ObservableCollection<string> Responses { get; private set; }
@@ -22,12 +34,15 @@ namespace VkBot.ViewModel
         public ICommand ValidateTokenAsync { get; }
         public ICommand SendMessageAsync { get; }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public ViewModel()
         {
             vkService = new VkService();
             Responses = new ObservableCollection<string>();
             ValidateTokenAsync = new RelayCommand(OnValidateTokenAsyncExecuted);
             SendMessageAsync = new RelayCommand(OnSendMessageAsyncExecuted);
+            SendButtonIsEnabled = true;
         }
 
         public async void OnValidateTokenAsyncExecuted(object obj)
@@ -40,6 +55,8 @@ namespace VkBot.ViewModel
 
         public async void OnSendMessageAsyncExecuted(object obj)
         {
+            SendButtonIsEnabled = false;
+
             if (!valid)
             {
                 if (Token_uri != null && Token_uri.Length > 100)
@@ -55,6 +72,8 @@ namespace VkBot.ViewModel
             }
             else
                 await SendAction();
+
+            SendButtonIsEnabled = true;
         }
 
         private async Task SendAction()
@@ -65,7 +84,7 @@ namespace VkBot.ViewModel
                 foreach (var response in responses)
                     Responses.Add(response);
             }
-                
+
             else
                 MessageBox.Show("Сообщение пустое или слишком короткое!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
