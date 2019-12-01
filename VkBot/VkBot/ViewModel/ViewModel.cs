@@ -81,8 +81,7 @@ namespace VkBot.ViewModel
             if (Message != null && Message.Length > 5)
             {
                 var responses = await vkService.SendAsync(Message);
-                foreach (var response in responses)
-                    Responses.Add(response);
+                Responses = responses.ToObservableCollection();
             }
 
             else
