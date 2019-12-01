@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace VkBot
 {
@@ -26,11 +25,17 @@ namespace VkBot
         const string redirect_uri = "https://oauth.vk.com/blank.html";
         const string method = "https://api.vk.com/method/";
 
+        /// <summary>
+        /// Перечисление прав доступа
+        /// </summary>
         enum Scope
         {
             friends, photos, audio, video, messages
         }
 
+        /// <summary>
+        /// Асинхронный метод по получению строки с содержанием токена доступа группы
+        /// </summary>
         #region GetAccessTokenUriAsync
         public async Task GetAccessTokenUriAsync()
         {
@@ -48,6 +53,13 @@ namespace VkBot
         }
         #endregion
 
+        /// <summary>
+        /// Асинхронный метод по получению словаря с содержанием токена группы, времени его валидности, 
+        /// снэпшота текущей даты и времени, локального ip
+        /// </summary>
+        /// <param name="uri">строка с содержанием токена доступа группы</param>
+        /// <param name="saving_path">путь для сохранения словаря</param>
+        /// <returns>объект класса Response, содержащий словарь и строку с Exception.Message</returns>
         #region GetAccessTokenAsync
         public async Task<Response<Dictionary<string, string>>> GetTokenAsync(string uri, string saving_path)
         {
@@ -85,6 +97,12 @@ namespace VkBot
         }
         #endregion
 
+        /// <summary>
+        /// Асинхронный метод по сохранению словаря на диск
+        /// </summary>
+        /// <param name="token_path">путь к файлу на диске</param>
+        /// <param name="token_info">словарь</param>
+        /// <returns>true или false</returns>
         #region SaveOnDiskAsync
         private async Task<bool> SaveAsync(string token_path, Dictionary<string, string> token_info)
         {
@@ -108,14 +126,19 @@ namespace VkBot
         }
         #endregion
 
+        /// <summary>
+        /// Асинхронный метод по чтению словаря из файла
+        /// </summary>
+        /// <param name="token_path">путь к файлу на диске</param>
+        /// <returns>словарь с данными токена</returns>
         #region ReadFromDiskAsync
-        private async Task<Dictionary<string, string>> ReadAsync(string path)
+        private async Task<Dictionary<string, string>> ReadAsync(string token_path)
         {
-            if (!File.Exists(path)) return null;
+            if (!File.Exists(token_path)) return null;
 
             var token_info = new Dictionary<string, string>();
 
-            using (StreamReader r = new StreamReader(path))
+            using (StreamReader r = new StreamReader(token_path))
             {
                 try
                 {
@@ -140,6 +163,11 @@ namespace VkBot
         }
         #endregion
 
+        /// <summary>
+        /// Асинхронный метод по валидации токена группы, записанного в файл на диск
+        /// </summary>
+        /// <param name="token_path">путь к файлу на диске</param>
+        /// <returns>true или false</returns>
         #region ValidateAccessTokenAsync
         public async Task<bool> ValidateAsync(string token_path)
         {
@@ -164,6 +192,11 @@ namespace VkBot
         }
         #endregion
 
+        /// <summary>
+        /// Асинхронный метод по получению словаря членов группы с исключением администрации
+        /// </summary>
+        /// <returns>объект класса Response, содержащий словарь(id пользователя, имя пользователя) 
+        /// и строку с Exception.Message</returns>
         #region GetTargetMembersAsync
         private async Task<Response<Dictionary<int, string>>> GetUsersAsync()
         {
@@ -225,8 +258,13 @@ namespace VkBot
         }
         #endregion
 
+        /// <summary>
+        /// Асинхронный метод по рассылке сообщений внтури сообщества
+        /// </summary>
+        /// <param name="message">текст сообщения членам группы</param>
+        /// <returns>коллекция ответов в json формате</returns>
         #region SendMessagesAsync
-        public async Task<List<string>> SendAsync(string message)
+        public async Task<ICollection<string>> SendAsync(string message)
         {
             Dictionary<int, string> users = new Dictionary<int, string>();
 
@@ -249,7 +287,7 @@ namespace VkBot
                 { "access_token", access_token}
             };
 
-            List<string> post_responses = new List<string>();
+            ICollection<string> post_responses = new List<string>();
             var rnd = new Random();
 
             foreach (var user in users)
@@ -259,7 +297,6 @@ namespace VkBot
                 content["message"] = user.Value + ", " + message;
                 var post_response = await Utilities.PostAsync(send_message_request, content);
                 post_responses.Add(post_response);
-                Thread.Sleep(600);
             }
 
             return post_responses;
