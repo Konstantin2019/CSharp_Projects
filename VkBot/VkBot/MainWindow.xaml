@@ -3,39 +3,65 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:VkBot"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:v="clr-namespace:VkBot.ViewModel"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        Loaded="Window_Loaded">
-    <Grid>
+        Title="MainWindow" Height="455" Width="800">
+    
+    <Window.Resources>
+        <v:ViewModel x:Key="view_model"/>
+    </Window.Resources>
+
+    <Grid Name="MainGrid"
+          DataContext="{StaticResource view_model}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60*"/>
             <ColumnDefinition Width="40*"/>
         </Grid.ColumnDefinitions>
+        <i:Interaction.Triggers>
+            <i:EventTrigger EventName="Loaded">
+                <i:InvokeCommandAction Command="{Binding Path=ValidateTokenAsync}"/>
+            </i:EventTrigger>
+        </i:Interaction.Triggers>
         <StackPanel Grid.Column="0"
-                    Orientation="Vertical"
-                    VerticalAlignment="Top"
-                    HorizontalAlignment="Left">
-            <StackPanel Orientation="Horizontal"
-                        Margin="0,5,0,0">
-                <TextBlock Text="Access_token : " 
+                    Orientation="Vertical">
+            <DockPanel Margin="0,5,0,0">
+                <TextBlock DockPanel.Dock="Left" 
+                           Text="Access_token : " 
                            FontSize="16"/>
-                <TextBox Name="token_tb" 
+                <TextBox DockPanel.Dock="Right"
+                         Text="{Binding Path=Token_uri}"
                          MinWidth="360"
+                         Margin="0,0,5,0"
                          FontSize="16"/>
-            </StackPanel>
+            </DockPanel>
             <Separator Margin="0,5,0,0"/>
-            <TextBox Name="Message_box"
+            <TextBox Text="{Binding Path=Message}"
                      MinHeight="340"
-                     Margin="0,5,0,0"/>
-            <Button Name="Send_btn"
+                     Margin="5,5,5,0"
+                     FontSize="16"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"/>
+            <Button x:Name="send_btn"
+                    Command="{Binding Path=SendMessageAsync}"
                     Height="30"
                     Margin="0,5,0,0"
                     Content="Начать рассылку"
-                    FontSize="16" Click="Send_btn_Click"/>
+                    FontSize="16"
+                    IsEnabled="{Binding Path=SendButtonIsEnabled}"/>
         </StackPanel>
-        <ListView Name="Response_view"
-                  Grid.Column="1"
-                  Margin="5"/>
+        <ListBox ItemsSource="{Binding Path=Responses}"
+                 Grid.Column="1"
+                 Margin="5">
+            <ListBox.Style>
+                <Style>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ElementName=send_btn, Path=IsEnabled}" Value="false">
+                            <Setter Property="ListBox.Template" Value="{StaticResource WaitControlTemplate}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.Style>
+        </ListBox>
     </Grid>
 </Window>
