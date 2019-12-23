@@ -1,0 +1,54 @@
+﻿<Window x:Class="FireChat.Chat"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="{Binding Path=Title}" 
+        Height="450" 
+        Width="800"
+        DataContext="{Binding Source={StaticResource Locator}, Path=FireChatVM}">
+    <Grid>
+        <DockPanel HorizontalAlignment="Stretch" 
+                   Height="399" 
+                   LastChildFill="True" 
+                   Margin="10" 
+                   VerticalAlignment="Stretch" 
+                   Width="772">
+            <Button DockPanel.Dock="Bottom"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Stretch"
+                    Content="Отправить"
+                    FontSize="18"
+                    Margin="5"
+                    Command="{Binding Path=Send}"/>
+            <TextBox DockPanel.Dock="Bottom"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     FontSize="28"
+                     Margin="5"/>
+            <ListBox DockPanel.Dock="Left"
+                     Width="500"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Stretch"
+                     Margin="5"
+                     FontSize="18"
+                     ItemsSource="{Binding Path=UserMessages}"/>
+            <StackPanel DockPanel.Dock="Right"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Margin="5">
+                <Label Content="В сети"
+                       HorizontalAlignment="Center"
+                       FontSize="18" 
+                       FontFamily="Segoe Print"/>
+                <ListBox Margin="5"
+                         FontSize="18"
+                         VerticalAlignment="Stretch"
+                         HorizontalAlignment="Stretch" 
+                         Height="242"
+                         ItemsSource="{Binding Path=CurrentUsers}"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

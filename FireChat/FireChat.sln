@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.852
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireChat", "FireChat\FireChat.csproj", "{26D93933-2D75-41FC-ABCC-8FA8348FAE6F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireBase_lib", "FireBase_lib\FireBase_lib.csproj", "{3257F2C5-70D9-4366-9686-3632D71FEA73}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{26D93933-2D75-41FC-ABCC-8FA8348FAE6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26D93933-2D75-41FC-ABCC-8FA8348FAE6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26D93933-2D75-41FC-ABCC-8FA8348FAE6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26D93933-2D75-41FC-ABCC-8FA8348FAE6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2C4C7069-0927-4571-9EB3-D7823B700072}
+	EndGlobalSection
+EndGlobal
