@@ -5,6 +5,7 @@ using GalaSoft.MvvmLight.Command;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 
 namespace FireChat.ViewModel
@@ -12,9 +13,24 @@ namespace FireChat.ViewModel
     public class FireChatViewModel : ViewModelBase
     {
         private string windowTitle = "FireChat";
-        private MessangerActions provider;
         private string name;
         private string id;
+        private string message;
+        private bool regIsEnabled;
+        private bool authIsEnabled;
+
+        private MessangerActions provider;
+        private static Chat chat;
+
+        enum AuthCodes
+        {
+            success = 0, not_found_error = 1, auth_failed_error = -1, user_exists_error = -2 
+        }
+
+        enum RegCodes
+        {
+            success = 0, already_exists_error = 1, reg_failed_error = -1
+        }
 
         public string Title
         {
@@ -34,12 +50,32 @@ namespace FireChat.ViewModel
             set => Set(ref id, value);
         }
 
+        public string Message
+        {
+            get => message;
+            set => Set(ref message, value);
+        }
+
+        public bool RegIsEnabled
+        {
+            get => regIsEnabled;
+            set => Set(ref regIsEnabled, value);
+        }
+
+        public bool AuthIsEnabled
+        {
+            get => authIsEnabled;
+            set => Set(ref authIsEnabled, value);
+        }
+
         public ObservableCollection<User> CurrentUsers { get; private set; }          
         public ObservableCollection<UserMessage> UserMessages { get; private set; } 
 
         public ICommand Auth { get; }
         public ICommand Reg { get; }
         public ICommand Send { get; }
+        public ICommand ListenMessages { get; }
+        public ICommand ListenCurrentUsers { get; }
 
         public FireChatViewModel(MessangerActions Provider)
         {
@@ -49,34 +85,125 @@ namespace FireChat.ViewModel
             Auth = new RelayCommand(OnAuthExecuted);
             Reg = new RelayCommand(OnRegExecuted);
             Send = new RelayCommand(OnSendExecuted);
+            ListenMessages = new RelayCommand(OnListenMessagesExecuted);
+            ListenCurrentUsers = new RelayCommand(OnListenCurrentUsersExecuted);
 
             provider.OnCurrentUsersReceive += OnCurrentUsersReceiveExecuted;
             provider.OnMessagesReceive += OnMessagesReceiveExecuted;
         }
 
+        private async void OnListenCurrentUsersExecuted()
+        {
+            await provider.ListenCurrentUsersThread();
+        }
+
+        private async void OnListenMessagesExecuted()
+        {
+            await provider.ListenMessagesThread();
+        }
+
         private void OnMessagesReceiveExecuted(ICollection<UserMessage> items)
         {
-            throw new NotImplementedException();
+            if (items != null)
+                UserMessages.AddRange(items);
         }
 
         private void OnCurrentUsersReceiveExecuted(ICollection<User> items)
         {
-            throw new NotImplementedException();
+            CurrentUsers.Clear();
+            if (items != null)
+                CurrentUsers.AddRange(items);
         }
 
-        private void OnSendExecuted()
+        private async void OnSendExecuted()
         {
-            throw new NotImplementedException();
+            var timeStamp = DateTime.Now.ToShortTimeString();
+            var userMessage = new UserMessage { Name = message,
+                                                Value = timeStamp,
+                                                UserName = MessangerActions.CurrentUser.Name };
+            await provider.SendMessage(userMessage);
         }
 
-        private void OnRegExecuted()
+        private async void OnRegExecuted()
         {
-            throw new NotImplementedException();
+            CheckSession();
+            regIsEnabled = false;
+            authIsEnabled = false;
+
+            var user = new User { Name = name, Value = id };
+            var reg = (RegCodes)await provider.Register(user);
+
+            switch (reg)
+            {
+                case RegCodes.success:
+                    MessageBox.Show($"Регистрация прошла успешно!" +
+                                    $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}", 
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Information);
+                    chat = new Chat();
+                    chat.Show();
+                    break;
+                case RegCodes.already_exists_error:
+                    MessageBox.Show("Такой пользователь уже существует!", 
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+                case RegCodes.reg_failed_error:
+                    MessageBox.Show("Не удалось пройти регистрацию! Попробуйте повторить попытку позже!", 
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+                default:
+                    break;
+            }
+
+            regIsEnabled = true;
+            authIsEnabled = true;
         }
 
-        private void OnAuthExecuted()
+        private async void OnAuthExecuted()
         {
-            throw new NotImplementedException();
+            CheckSession();
+            regIsEnabled = false;
+            authIsEnabled = false;
+
+            var user = new User { Name = name, Value = id };
+            var auth = (AuthCodes)await provider.Auth(user);
+
+            switch (auth)
+            {
+                case AuthCodes.success:
+                    MessageBox.Show($"Аутентификация прошла успешно! " +
+                                    $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}",
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Information);
+                    chat = new Chat();
+                    chat.Show();
+                    break;
+                case AuthCodes.not_found_error:
+                    MessageBox.Show("Пользователь не найден!", 
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+                case AuthCodes.auth_failed_error:
+                    MessageBox.Show("Не удалось пройти аутентификацию! Попробуйте повторить попытку позже!", 
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+                case AuthCodes.user_exists_error:
+                    MessageBox.Show("Такой пользователь уже в сети!", 
+                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+                default:
+                    break;
+            }            
+
+            regIsEnabled = true;
+            authIsEnabled = true;
+        }
+
+        private void CheckSession()
+        {
+            if (chat != null)
+            {
+                MessageBox.Show("Текущий сеанс пользователя не закрыт!", 
+                                "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            };
         }
     }
 }
