@@ -76,6 +76,7 @@ namespace FireChat.ViewModel
         public ICommand Send { get; }
         public ICommand ListenMessages { get; }
         public ICommand ListenCurrentUsers { get; }
+        public ICommand WindowClosing { get; }
 
         public FireChatViewModel(MessangerActions Provider)
         {
@@ -87,9 +88,17 @@ namespace FireChat.ViewModel
             Send = new RelayCommand(OnSendExecuted);
             ListenMessages = new RelayCommand(OnListenMessagesExecuted);
             ListenCurrentUsers = new RelayCommand(OnListenCurrentUsersExecuted);
-
+            WindowClosing = new RelayCommand(OnWindowClosingExecuted);
+            RegIsEnabled = true;
+            AuthIsEnabled = true;
             provider.OnCurrentUsersReceive += OnCurrentUsersReceiveExecuted;
             provider.OnMessagesReceive += OnMessagesReceiveExecuted;
+        }
+
+        private async void OnWindowClosingExecuted()
+        {
+            await provider.RemoveCurrentUser();
+            chat = null;
         }
 
         private async void OnListenCurrentUsersExecuted()
@@ -127,8 +136,8 @@ namespace FireChat.ViewModel
         private async void OnRegExecuted()
         {
             CheckSession();
-            regIsEnabled = false;
-            authIsEnabled = false;
+            RegIsEnabled = false;
+            AuthIsEnabled = false;
 
             var user = new User { Name = name, Value = id };
             var reg = (RegCodes)await provider.Register(user);
@@ -154,15 +163,15 @@ namespace FireChat.ViewModel
                     break;
             }
 
-            regIsEnabled = true;
-            authIsEnabled = true;
+            RegIsEnabled = true;
+            AuthIsEnabled = true;
         }
 
         private async void OnAuthExecuted()
         {
             CheckSession();
-            regIsEnabled = false;
-            authIsEnabled = false;
+            RegIsEnabled = false;
+            AuthIsEnabled = false;
 
             var user = new User { Name = name, Value = id };
             var auth = (AuthCodes)await provider.Auth(user);
@@ -192,8 +201,8 @@ namespace FireChat.ViewModel
                     break;
             }            
 
-            regIsEnabled = true;
-            authIsEnabled = true;
+            RegIsEnabled = true;
+            AuthIsEnabled = true;
         }
 
         private void CheckSession()

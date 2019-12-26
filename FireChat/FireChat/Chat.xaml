@@ -8,6 +8,11 @@
         Height="450" 
         Width="800"
         DataContext="{Binding Source={StaticResource Locator}, Path=FireChatVM}">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Closing">
+            <i:InvokeCommandAction Command="{Binding Path=WindowClosing}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <Grid>
         <DockPanel HorizontalAlignment="Stretch" 
                    Height="399" 

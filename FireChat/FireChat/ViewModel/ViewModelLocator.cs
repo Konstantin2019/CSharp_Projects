@@ -7,6 +7,8 @@ namespace FireChat.ViewModel
 {
     public class ViewModelLocator
     {
+        private static FireChatViewModel singleInstance;
+
         public ViewModelLocator()
         {
             var service = SimpleIoc.Default;
@@ -17,7 +19,19 @@ namespace FireChat.ViewModel
             service.TryRegister<MessangerActions>();
         }
 
-        public FireChatViewModel FireChatVM => ServiceLocator.Current.GetInstance<FireChatViewModel>();
+        public FireChatViewModel FireChatVM
+        {
+            get
+            {
+                if (singleInstance != null)
+                    return singleInstance;
+                else
+                {
+                    singleInstance = ServiceLocator.Current.GetInstance<FireChatViewModel>();
+                    return singleInstance;
+                }
+            }
+        }
     }
 
     public static class SimpleIocExtention
