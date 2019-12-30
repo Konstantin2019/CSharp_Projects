@@ -1,6 +1,7 @@
 using CommonServiceLocator;
 using FireBase_lib.Services;
 using GalaSoft.MvvmLight.Ioc;
+using FireChat.ViewModel.WPFServices;
 using System;
 
 namespace FireChat.ViewModel
@@ -16,7 +17,9 @@ namespace FireChat.ViewModel
 
             service.Register<FireChatViewModel>();
 
-            service.TryRegister<MessangerActions>();
+            service.TryRegister<MessangerActions>()
+                   .TryRegister<WPFDialogService>()
+                   .TryRegister<WindowsManager>();
         }
 
         public FireChatViewModel FireChatVM

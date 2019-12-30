@@ -75,6 +75,8 @@
     </ApplicationDefinition>
     <Compile Include="ViewModel\FireChatViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
+    <Compile Include="ViewModel\WPFServices\WindowsManager.cs" />
+    <Compile Include="ViewModel\WPFServices\WPFDialogService.cs" />
     <Page Include="Chat.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

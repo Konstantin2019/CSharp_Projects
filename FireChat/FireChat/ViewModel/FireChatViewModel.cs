@@ -1,11 +1,11 @@
 using FireBase_lib.Entities;
 using FireBase_lib.Services;
+using FireChat.ViewModel.WPFServices;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 
 namespace FireChat.ViewModel
@@ -19,8 +19,9 @@ namespace FireChat.ViewModel
         private bool regIsEnabled;
         private bool authIsEnabled;
 
-        private MessangerActions provider;
-        private static Chat chat;
+        private MessangerActions fireBaseProvider;
+        private WPFDialogService dialogService;
+        private WindowsManager windowsManager;
 
         enum AuthCodes
         {
@@ -78,9 +79,11 @@ namespace FireChat.ViewModel
         public ICommand ListenCurrentUsers { get; }
         public ICommand WindowClosing { get; }
 
-        public FireChatViewModel(MessangerActions Provider)
+        public FireChatViewModel(MessangerActions FireBaseProvider, WPFDialogService DialogService, WindowsManager WindowsManager)
         {
-            provider = Provider;
+            fireBaseProvider = FireBaseProvider;
+            dialogService = DialogService;
+            windowsManager = WindowsManager;
             CurrentUsers = new ObservableCollection<User>();
             UserMessages = new ObservableCollection<UserMessage>();
             Auth = new RelayCommand(OnAuthExecuted);
@@ -91,24 +94,25 @@ namespace FireChat.ViewModel
             WindowClosing = new RelayCommand(OnWindowClosingExecuted);
             RegIsEnabled = true;
             AuthIsEnabled = true;
-            provider.OnCurrentUsersReceive += OnCurrentUsersReceiveExecuted;
-            provider.OnMessagesReceive += OnMessagesReceiveExecuted;
+            fireBaseProvider.OnCurrentUsersReceive += OnCurrentUsersReceiveExecuted;
+            fireBaseProvider.OnMessagesReceive += OnMessagesReceiveExecuted;
         }
 
         private async void OnWindowClosingExecuted()
         {
-            await provider.RemoveCurrentUser();
-            chat = null;
+            await fireBaseProvider.RemoveCurrentUser();
+            windowsManager.CurrentWindow = null;
+            windowsManager.MainWindow.Show();
         }
 
         private async void OnListenCurrentUsersExecuted()
         {
-            await provider.ListenCurrentUsersThread();
+            await fireBaseProvider.ListenCurrentUsersThread();
         }
 
         private async void OnListenMessagesExecuted()
         {
-            await provider.ListenMessagesThread();
+            await fireBaseProvider.ListenMessagesThread();
         }
 
         private void OnMessagesReceiveExecuted(ICollection<UserMessage> items)
@@ -130,7 +134,8 @@ namespace FireChat.ViewModel
             var userMessage = new UserMessage { Name = message,
                                                 Value = timeStamp,
                                                 UserName = MessangerActions.CurrentUser.Name };
-            await provider.SendMessage(userMessage);
+            await fireBaseProvider.SendMessage(userMessage);
+            message = "";
         }
 
         private async void OnRegExecuted()
@@ -140,24 +145,26 @@ namespace FireChat.ViewModel
             AuthIsEnabled = false;
 
             var user = new User { Name = name, Value = id };
-            var reg = (RegCodes)await provider.Register(user);
+            var reg = (RegCodes)await fireBaseProvider.Register(user);
 
             switch (reg)
             {
                 case RegCodes.success:
-                    MessageBox.Show($"Регистрация прошла успешно!" +
-                                    $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}", 
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Information);
-                    chat = new Chat();
-                    chat.Show();
+                    dialogService.Show($"Регистрация прошла успешно!" +
+                                       $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}", 
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Information);
+                    windowsManager.CurrentWindow = new Chat();
+                    windowsManager.MainWindow.Hide();
+                    windowsManager.CurrentWindow.Show();
                     break;
                 case RegCodes.already_exists_error:
-                    MessageBox.Show("Такой пользователь уже существует!", 
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    dialogService.Show("Такой пользователь уже существует!", 
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
                     break;
                 case RegCodes.reg_failed_error:
-                    MessageBox.Show("Не удалось пройти регистрацию! Попробуйте повторить попытку позже!", 
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    dialogService.Show("Не удалось пройти регистрацию! " +
+                                       "Попробуйте повторить попытку позже!", 
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
                     break;
                 default:
                     break;
@@ -174,28 +181,29 @@ namespace FireChat.ViewModel
             AuthIsEnabled = false;
 
             var user = new User { Name = name, Value = id };
-            var auth = (AuthCodes)await provider.Auth(user);
+            var auth = (AuthCodes)await fireBaseProvider.Auth(user);
 
             switch (auth)
             {
                 case AuthCodes.success:
-                    MessageBox.Show($"Аутентификация прошла успешно! " +
-                                    $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}",
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Information);
-                    chat = new Chat();
-                    chat.Show();
+                    dialogService.Show($"Аутентификация прошла успешно! " +
+                                       $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}",
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Information);
+                    windowsManager.CurrentWindow = new Chat();
+                    windowsManager.MainWindow.Hide();
+                    windowsManager.CurrentWindow.Show();
                     break;
                 case AuthCodes.not_found_error:
-                    MessageBox.Show("Пользователь не найден!", 
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    dialogService.Show("Пользователь не найден!", 
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
                     break;
                 case AuthCodes.auth_failed_error:
-                    MessageBox.Show("Не удалось пройти аутентификацию! Попробуйте повторить попытку позже!", 
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    dialogService.Show("Не удалось пройти аутентификацию! Попробуйте повторить попытку позже!", 
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
                     break;
                 case AuthCodes.user_exists_error:
-                    MessageBox.Show("Такой пользователь уже в сети!", 
-                                    "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                    dialogService.Show("Такой пользователь уже в сети!", 
+                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
                     break;
                 default:
                     break;
@@ -207,10 +215,10 @@ namespace FireChat.ViewModel
 
         private void CheckSession()
         {
-            if (chat != null)
+            if (windowsManager.CurrentWindow != null)
             {
-                MessageBox.Show("Текущий сеанс пользователя не закрыт!", 
-                                "Сообщение", MessageBoxButton.OK, MessageBoxImage.Error);
+                dialogService.Show("Текущий сеанс пользователя не закрыт!", 
+                                   "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
                 return;
             };
         }
