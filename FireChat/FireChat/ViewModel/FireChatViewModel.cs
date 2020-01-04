@@ -150,21 +150,19 @@ namespace FireChat.ViewModel
             switch (reg)
             {
                 case RegCodes.success:
-                    dialogService.Show($"Регистрация прошла успешно!" +
-                                       $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}", 
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Information);
+                    dialogService.ShowInfo($"Регистрация прошла успешно!" +
+                                           $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}",
+                                           "Сообщение");
                     windowsManager.CurrentWindow = new Chat();
                     windowsManager.MainWindow.Hide();
                     windowsManager.CurrentWindow.Show();
                     break;
                 case RegCodes.already_exists_error:
-                    dialogService.Show("Такой пользователь уже существует!", 
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
+                    dialogService.ShowError("Такой пользователь уже существует!", "Сообщение");
                     break;
                 case RegCodes.reg_failed_error:
-                    dialogService.Show("Не удалось пройти регистрацию! " +
-                                       "Попробуйте повторить попытку позже!", 
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
+                    dialogService.ShowError("Не удалось пройти регистрацию! " +
+                                            "Попробуйте повторить попытку позже!", "Сообщение");
                     break;
                 default:
                     break;
@@ -186,24 +184,22 @@ namespace FireChat.ViewModel
             switch (auth)
             {
                 case AuthCodes.success:
-                    dialogService.Show($"Аутентификация прошла успешно! " +
-                                       $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}",
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Information);
+                    dialogService.ShowInfo($"Аутентификация прошла успешно! " +
+                                           $"Вы вошли в систему как {MessangerActions.CurrentUser.Name}",
+                                           "Сообщение");
                     windowsManager.CurrentWindow = new Chat();
                     windowsManager.MainWindow.Hide();
                     windowsManager.CurrentWindow.Show();
                     break;
                 case AuthCodes.not_found_error:
-                    dialogService.Show("Пользователь не найден!", 
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
+                    dialogService.ShowError("Пользователь не найден!", "Сообщение");
                     break;
                 case AuthCodes.auth_failed_error:
-                    dialogService.Show("Не удалось пройти аутентификацию! Попробуйте повторить попытку позже!", 
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
+                    dialogService.ShowError("Не удалось пройти аутентификацию! " +
+                                            "Попробуйте повторить попытку позже!", "Сообщение");
                     break;
                 case AuthCodes.user_exists_error:
-                    dialogService.Show("Такой пользователь уже в сети!", 
-                                       "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
+                    dialogService.ShowError("Такой пользователь уже в сети!", "Сообщение");
                     break;
                 default:
                     break;
@@ -217,8 +213,7 @@ namespace FireChat.ViewModel
         {
             if (windowsManager.CurrentWindow != null)
             {
-                dialogService.Show("Текущий сеанс пользователя не закрыт!", 
-                                   "Сообщение", WPFDialogService.DialogButton.OK, WPFDialogService.DialogImage.Error);
+                dialogService.ShowError("Текущий сеанс пользователя не закрыт!", "Сообщение");
                 return;
             };
         }

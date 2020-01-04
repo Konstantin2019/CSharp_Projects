@@ -17,13 +17,19 @@ namespace FireChat.ViewModel.WPFServices
 
         public enum DialogResult
         {
-            None = 0, OK = 1, Cancel = 2, Yes = 6, No = 7 
+            None = 0, OK = 1, Cancel = 2, Yes = 6, No = 7
         }
 
-        public DialogResult Show(string text, string caption, DialogButton button, DialogImage image)
-        {
-            var answer = MessageBox.Show(text, caption, (MessageBoxButton)button, (MessageBoxImage)image);
-            return (DialogResult)answer;
-        }
+        public DialogResult ShowInfo(string text, string caption)
+            =>
+            (DialogResult)MessageBox.Show(text, caption, MessageBoxButton.OK, MessageBoxImage.Information);
+
+        public DialogResult ShowError(string text, string caption)
+            =>
+            (DialogResult)MessageBox.Show(text, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+
+        public DialogResult ShowMessage(string text, string caption, DialogButton button, DialogImage image) 
+            => 
+            (DialogResult)MessageBox.Show(text, caption, (MessageBoxButton)button, (MessageBoxImage)image);
     }
 }
