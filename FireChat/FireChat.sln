@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireChat", "FireChat\FireCh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireBase_lib", "FireBase_lib\FireBase_lib.csproj", "{3257F2C5-70D9-4366-9686-3632D71FEA73}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{B6983425-CBF0-4D56-9392-65BF292DCD3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessangerActionsTests", "UnitTest1\MessangerActionsTests.csproj", "{2C4E7837-110B-4080-9091-C1709B8AE61B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +25,16 @@ Global
 		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3257F2C5-70D9-4366-9686-3632D71FEA73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C4E7837-110B-4080-9091-C1709B8AE61B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C4E7837-110B-4080-9091-C1709B8AE61B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C4E7837-110B-4080-9091-C1709B8AE61B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C4E7837-110B-4080-9091-C1709B8AE61B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2C4E7837-110B-4080-9091-C1709B8AE61B} = {B6983425-CBF0-4D56-9392-65BF292DCD3A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2C4C7069-0927-4571-9EB3-D7823B700072}

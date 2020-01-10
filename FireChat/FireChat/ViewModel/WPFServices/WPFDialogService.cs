@@ -2,6 +2,9 @@
 
 namespace FireChat.ViewModel.WPFServices
 {
+    /// <summary>
+    /// Сервис по взимодествию с диалоговыми окнами приложения
+    /// </summary>
     public class WPFDialogService
     {
         public enum DialogButton

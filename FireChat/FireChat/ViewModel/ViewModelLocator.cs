@@ -6,6 +6,9 @@ using System;
 
 namespace FireChat.ViewModel
 {
+    /// <summary>
+    /// Класс для регистрации сервисов
+    /// </summary>
     public class ViewModelLocator
     {
         private static FireChatViewModel singleInstance;

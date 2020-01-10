@@ -2,6 +2,9 @@
 
 namespace FireBase_lib.Entities
 {
+    /// <summary>
+    /// Класс Пользователь
+    /// </summary>
     public class User : ISerializableObject
     {
         [JsonProperty("UserName")]

@@ -2,6 +2,9 @@
 
 namespace FireBase_lib.Entities
 {
+    /// <summary>
+    /// Класс Сообщения Пользователя
+    /// </summary>
     public class UserMessage : ISerializableObject
     {
         [JsonProperty("UserName")]

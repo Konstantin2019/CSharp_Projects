@@ -3,7 +3,9 @@ using System.Collections.ObjectModel;
 
 namespace FireBase_lib.Entities
 {
-    //пишем расширение для класса ObservableCollection
+    /// <summary>
+    /// Расширение для класса ObservableCollection
+    /// </summary>
     public static class ObservableCollectionExtentions
     {
         public static void AddRange<T>(this ObservableCollection<T> ts, ICollection<T> collection)

@@ -7,8 +7,16 @@ using Newtonsoft.Json.Linq;
 
 namespace FireBase_lib.Services
 {
+    /// <summary>
+    /// Вспомогательный класс для сериализации и десериализации объектов
+    /// </summary>
     public static class UtilityHelper
     {
+        /// <summary>
+        /// Метод, пытающийся осуществить json-сериализацию
+        /// </summary>
+        /// <param name="obj">сериализуемый объект</param>
+        /// <returns>сериализованный объект</returns>
         public static string TrySerialize(ISerializableObject obj)
         {
             try
@@ -22,6 +30,12 @@ namespace FireBase_lib.Services
             }
         }
 
+        /// <summary>
+        /// Метод, пытающийся осуществить json-десериализацию
+        /// </summary>
+        /// <typeparam name="T">тип объекта десериализации</typeparam>
+        /// <param name="json">сериализованный объект</param>
+        /// <returns>десериализованный объект</returns>
         public static List<T> TryDeserialize<T>(string json) where T: ISerializableObject
         {
             try
@@ -42,6 +56,13 @@ namespace FireBase_lib.Services
             }
         }
 
+        /// <summary>
+        /// Вспомогательный класс для навигации по нодам БД
+        /// </summary>
+        /// <typeparam name="T">тип целевого объекта</typeparam>
+        /// <param name="json">сериализованный целевой объект</param>
+        /// <param name="obj">целевой объект</param>
+        /// <returns>имя ноды, содержащей целевой объект</returns>
         public static string GetKey<T>(string json, T obj) where T : ISerializableObject
         {
             try

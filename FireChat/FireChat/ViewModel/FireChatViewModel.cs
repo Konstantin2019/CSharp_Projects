@@ -10,6 +10,9 @@ using System.Windows.Input;
 
 namespace FireChat.ViewModel
 {
+    /// <summary>
+    ///  ласс, осуществл€ющий взаимодествие бекэнда с интерфейсом приложени€
+    /// </summary>
     public class FireChatViewModel : ViewModelBase
     {
         private string windowTitle = "FireChat";

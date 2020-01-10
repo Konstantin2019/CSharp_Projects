@@ -5,12 +5,24 @@ using System.Threading.Tasks;
 
 namespace FireBase_lib.Services
 {
+    /// <summary>
+    /// Класс, реализующий функциональность мессенджера
+    /// </summary>
     public class MessangerActions
     {
         private const int maxNumberOfMessages = 100;
         private const string path = "https://messanger-konst.firebaseio.com/";
+        /// <summary>
+        /// Нода: пользователи
+        /// </summary>
         private const string nodeUsers = "Users";
-        private const string currentUsersNode = "CurrentUsers";
+        /// <summary>
+        /// Нода: пользователи-онлайн
+        /// </summary>
+        private const string nodeCurrentUsers = "CurrentUsers";
+        /// <summary>
+        /// Нода: сообщения
+        /// </summary>
         private const string nodeMessages = "Messages";
 
         private int jsonMessagesLength, jsonCurrentUsersLength;
@@ -27,9 +39,14 @@ namespace FireBase_lib.Services
             DataBase = new FireBaseRequests(path);
         }
 
+        /// <summary>
+        /// Метод аутентификации
+        /// </summary>
+        /// <param name="user">пользователь</param>
+        /// <returns>код ответа</returns>
         public async Task<int> Auth(User user)
         {
-            string getJson = await DataBase.Get(nodeUsers);
+            string getJson = await DataBase.GetAsync(nodeUsers);
             if (getJson == null) return -1; // -1 - не удалось произвести аутентификацию
 
             var users = UtilityHelper.TryDeserialize<User>(getJson);
@@ -41,12 +58,12 @@ namespace FireBase_lib.Services
                     if (u.Name.ToLower() == user.Name.ToLower() && u.Value == user.Value)
                     {
                         CurrentUser = u;
-                        var checkUser = await DataBase.Get(currentUsersNode);
+                        var checkUser = await DataBase.GetAsync(nodeCurrentUsers);
                         if (checkUser != null)
                         {
                             if (checkUser == "null")
                             {
-                                await AddCurentUser(CurrentUser, currentUsersNode);
+                                await AddCurentUser(CurrentUser, nodeCurrentUsers);
                                 return 0; // 0 - аутентификация прошла успешно    
                             }
                             var currentUsers = UtilityHelper.TryDeserialize<User>(checkUser);
@@ -57,7 +74,7 @@ namespace FireBase_lib.Services
                                     return -2; // -2 - такой пользователь уже в сети                               
                                 }
                             }
-                            await AddCurentUser(CurrentUser, currentUsersNode);
+                            await AddCurentUser(CurrentUser, nodeCurrentUsers);
                             return 0; // 0 - аутентификация прошла успешно    
                         }           
                     }
@@ -66,9 +83,14 @@ namespace FireBase_lib.Services
             return 1; // 1 - пользователь не найден
         }
 
+        /// <summary>
+        /// Метод регистрации
+        /// </summary>
+        /// <param name="user">пользователь</param>
+        /// <returns>код ответа</returns>
         public async Task<int> Register(User user)
         {
-            string getJson = await DataBase.Get(nodeUsers);
+            string getJson = await DataBase.GetAsync(nodeUsers);
             if (getJson == null) return -1; // -1 - не удалось произвести регистрацию
 
             var users = UtilityHelper.TryDeserialize<User>(getJson);
@@ -86,12 +108,12 @@ namespace FireBase_lib.Services
 
             if (postJson != null)
             {
-                bool reg = await DataBase.Post(postJson, nodeUsers);
+                bool reg = await DataBase.PostAsync(postJson, nodeUsers);
                 if (reg)
                 {
                     CurrentUser = user;
                     var json = UtilityHelper.TrySerialize(CurrentUser);
-                    if (json != null) await DataBase.Post(json, currentUsersNode);
+                    if (json != null) await DataBase.PostAsync(json, nodeCurrentUsers);
                     return 0; // 0 - регистрация прошла успешно          
                 }
                 else return -1; // -1 - не удалось произвести регистрацию
@@ -100,23 +122,66 @@ namespace FireBase_lib.Services
             return -1;
         }
 
+        /// <summary>
+        /// Метод отправки сообщений
+        /// </summary>
+        /// <param name="message">сообщение</param>
+        /// <returns>успешность процедуры в булевом выражении</returns>
         public async Task<bool> SendMessage(UserMessage message)
         {
             var success = false;
             var postJson = UtilityHelper.TrySerialize(message);
 
             if (postJson != null)
-                success = await DataBase.Post(postJson, nodeMessages);
+                success = await DataBase.PostAsync(postJson, nodeMessages);
 
             return success;
         }
 
-        //реализация потока слушателя текущих пользователей с использованием событий
+        /// <summary>
+        /// Метод удаления текущего пользователя
+        /// </summary>
+        /// <returns>текущая задача</returns>
+        public async Task<bool> RemoveCurrentUser()
+        {
+            string childNode = null;
+            bool success = false;
+
+            string getJson = await DataBase.GetAsync(nodeCurrentUsers);
+
+            if (getJson != null)
+                childNode = UtilityHelper.GetKey(getJson, CurrentUser);
+
+            if (childNode != null)
+            {
+                var nodePath = nodeCurrentUsers + "/" + childNode;
+                success = await DataBase.DeleteAsync(nodePath);
+            }
+
+            return success;
+        }
+
+        /// <summary>
+        /// Метод добавления текущего пользователя
+        /// </summary>
+        /// <param name="user">пользователь</param>
+        /// <param name="node">нода</param>
+        /// <returns>текущая задача</returns>
+        private async Task AddCurentUser(User user, string node)
+        {
+            var json = UtilityHelper.TrySerialize(user);
+            if (json != null) await DataBase.PostAsync(json, node);
+        }
+
+        /// <summary>
+        /// Реализация потока слушателя текущих пользователей с использованием событий
+        /// </summary>
+        /// <returns>текущая задача</returns>
         public async Task ListenCurrentUsersThread() 
         {
             while (true)
             {
-                string getJson = await DataBase.Get(currentUsersNode);
+                string getJson = await DataBase.GetAsync(nodeCurrentUsers);
                 if (getJson.Length != jsonCurrentUsersLength)
                 {
                     jsonCurrentUsersLength = getJson.Length;
@@ -127,12 +192,15 @@ namespace FireBase_lib.Services
             }
         }
 
-        //реализация потока слушателя сообщений с использованием событий
+        /// <summary>
+        /// Реализация потока слушателя сообщений с использованием событий
+        /// </summary>
+        /// <returns>текущая задача</returns>
         public async Task ListenMessagesThread()
         {
             while (true)
             {
-                string getJson = await DataBase.Get(nodeMessages);
+                string getJson = await DataBase.GetAsync(nodeMessages);
                 if (getJson.Length > jsonMessagesLength)
                 {
                     jsonMessagesLength = getJson.Length;
@@ -151,32 +219,10 @@ namespace FireBase_lib.Services
                         }
 
                         if (messages.Count > maxNumberOfMessages)
-                            await DataBase.Delete(nodeMessages);
+                            await DataBase.DeleteAsync(nodeMessages);
                     }
                 }
             }
-        }
-
-        public async Task RemoveCurrentUser()
-        {
-            string childNode = null;
-
-            string getJson = await DataBase.Get(currentUsersNode);
-
-            if (getJson != null)
-                childNode = UtilityHelper.GetKey(getJson, CurrentUser);
-
-            if (childNode != null)
-            {
-                var nodePath = currentUsersNode + "/" + childNode;
-                await DataBase.Delete(nodePath);
-            }
-        }
-
-        private async Task AddCurentUser(User user, string node)
-        {
-            var json = UtilityHelper.TrySerialize(user);
-            if (json != null) await DataBase.Post(json, node);
         }
     }
 }

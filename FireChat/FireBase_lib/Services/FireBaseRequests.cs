@@ -4,10 +4,16 @@ using System.Threading.Tasks;
 
 namespace FireBase_lib.Services
 {
+    /// <summary>
+    /// Класс запросов к FireBase
+    /// </summary>
     public class FireBaseRequests
     {
         private const string JSON_SUFFIX = ".json";
 
+        /// <summary>
+        /// Базовый URL
+        /// </summary>
         private string BaseUrl { get; }
 
         public FireBaseRequests(string baseurl)
@@ -15,9 +21,20 @@ namespace FireBase_lib.Services
             BaseUrl = baseurl.EndsWith("/")? baseurl : baseurl + "/";
         }
 
+        /// <summary>
+        /// Полный URL
+        /// </summary>
+        /// <param name="nodepath">относительный ноды путь</param>
+        /// <returns>полный url</returns>
         private string FullPath(string nodepath) => BaseUrl + nodepath.Trim('/') + JSON_SUFFIX;
 
-        public async Task<bool> Post(string json, string nodepath)
+        /// <summary>
+        /// Метод, реализующий Post-запросы
+        /// </summary>
+        /// <param name="json">передаваемый контент в формате json</param>
+        /// <param name="nodepath">относительный ноды путь</param>
+        /// <returns>успешность процедуры в булевом выражении</returns>
+        public async Task<bool> PostAsync(string json, string nodepath)
         {
             using (var client = new HttpClient())
             {
@@ -36,7 +53,12 @@ namespace FireBase_lib.Services
             }
         }
 
-        public async Task<string> Get(string nodepath)
+        /// <summary>
+        /// Метод, реализующий Get-запросы
+        /// </summary>
+        /// <param name="nodepath">относительный ноды путь</param>
+        /// <returns>ответ в формате json</returns>
+        public async Task<string> GetAsync(string nodepath)
         {
             using (var client = new HttpClient())
             {
@@ -55,7 +77,12 @@ namespace FireBase_lib.Services
             }
         }
 
-        public async Task<bool> Delete(string nodepath)
+        /// <summary>
+        /// Метод, реализующий Delete-запросы
+        /// </summary>
+        /// <param name="nodepath">относительный ноды путь</param>
+        /// <returns>успешность процедуры в булевом выражении</returns>
+        public async Task<bool> DeleteAsync(string nodepath)
         {
             using (var client = new HttpClient())
             {
