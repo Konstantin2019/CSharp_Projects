@@ -42,7 +42,7 @@ namespace VkBot
         /// </summary>
         /// <param name="request">строка запроса</param>
         /// <param name="content">отправляемый контент</param>
-        /// <returns></returns>
+        /// <returns>строка ответа</returns>
         public static async Task<string> PostAsync(string request, Dictionary<string, string> content)
         {
             using (HttpClient client = new HttpClient())
@@ -66,7 +66,7 @@ namespace VkBot
         /// <summary>
         /// Метод по получению локального IP
         /// </summary>
-        /// <returns>IP-адрес</returns>
+        /// <returns>ip-адрес</returns>
         public static IPAddress GetLocalIP()
         {
             IPAddress Ip = null;

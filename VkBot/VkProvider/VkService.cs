@@ -16,10 +16,10 @@ namespace VkBot
     public class VkService
     {
         private static string access_token;
+        private int client_id;
+        private int group_id;
 
-        const int client_id = 5475341;
-        const int group_id = 127939533;
-        const int host_id = 26995904;
+        const string ids_path = "private_info.txt";
         const string api_version = "5.102";
         const string base_uri = "https://oauth.vk.com/authorize?";
         const string redirect_uri = "https://oauth.vk.com/blank.html";
@@ -34,12 +34,44 @@ namespace VkBot
         }
 
         /// <summary>
+        /// Метод по получению client_id и group_id
+        /// </summary>
+        /// <param name="path">путь к файлу</param>
+        /// <returns>словарь с client_id и group_id</returns>
+        #region GetIds
+        private Dictionary<string, int> GetPrivateInfo(string path)
+        {
+            try
+            {
+                var content = File.ReadAllLines(path);
+                var cl_id = int.Parse(content[0].Split('=')[1]);
+                var gr_id = int.Parse(content[1].Split('=')[1]);
+
+                if (cl_id != 0 && gr_id != 0)
+                    return new Dictionary<string, int>() { { "client_id", cl_id }, {"group_id", gr_id} };
+                else
+                    return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        #endregion
+
+        /// <summary>
         /// Асинхронный метод по получению строки с содержанием токена доступа группы
         /// </summary>
         #region GetAccessTokenUriAsync
         public async Task GetAccessTokenUriAsync()
         {
-            var auth_request = base_uri
+            var ids = GetPrivateInfo(ids_path);
+            if (ids != null)
+            {
+                client_id = ids["client_id"];
+                group_id = ids["group_id"];
+
+                var auth_request = base_uri
                                + $"client_id={client_id}&"
                                + $"group_ids={group_id}&"
                                + "display=page&"
@@ -49,7 +81,8 @@ namespace VkBot
                                + "response_type=token&"
                                + $"v={api_version}&"
                                + "state=0";
-            await Task.Run(() => { Process.Start(auth_request); });
+                await Task.Run(() => { Process.Start(auth_request); });
+            }
         }
         #endregion
 
@@ -102,7 +135,7 @@ namespace VkBot
         /// </summary>
         /// <param name="token_path">путь к файлу на диске</param>
         /// <param name="token_info">словарь</param>
-        /// <returns>true или false</returns>
+        /// <returns>успешность выполнения задачи в булевом выражении</returns>
         #region SaveOnDiskAsync
         private async Task<bool> SaveAsync(string token_path, Dictionary<string, string> token_info)
         {
@@ -167,7 +200,7 @@ namespace VkBot
         /// Асинхронный метод по валидации токена группы, записанного в файл на диск
         /// </summary>
         /// <param name="token_path">путь к файлу на диске</param>
-        /// <returns>true или false</returns>
+        /// <returns>успешность выполнения задачи в булевом выражении</returns>
         #region ValidateAccessTokenAsync
         public async Task<bool> ValidateAsync(string token_path)
         {
