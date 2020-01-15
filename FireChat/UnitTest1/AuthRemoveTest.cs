@@ -11,7 +11,7 @@ namespace MessangerActionsTests
         private static MessangerActions fireBaseProvider = new MessangerActions();
 
         [TestMethod]
-        public void AuthMethod()
+        public void AuthTestMethod()
         {
             #region Arrange
             User user_1 = new User { Name = "Kos", Value = "555" };
@@ -24,9 +24,9 @@ namespace MessangerActionsTests
             #endregion
 
             #region Act
-            var auth_actual_1 = fireBaseProvider.Auth(user_1).Result;
-            var auth_actual_2 = fireBaseProvider.Auth(user_2).Result;
-            var auth_actual_3 = fireBaseProvider.Auth(user_3).Result;
+            var auth_actual_1 = fireBaseProvider.AuthAsync(user_1).Result;
+            var auth_actual_2 = fireBaseProvider.AuthAsync(user_2).Result;
+            var auth_actual_3 = fireBaseProvider.AuthAsync(user_3).Result;
             #endregion
 
             #region Assert
@@ -37,7 +37,7 @@ namespace MessangerActionsTests
         }
 
         [TestMethod]
-        public void RemoveMethod()
+        public void RemoveTestMethod()
         {
             #region Arrange
             User user = CurrentUser;
@@ -45,7 +45,7 @@ namespace MessangerActionsTests
             #endregion
 
             #region Act
-            var delete_actual = fireBaseProvider.RemoveCurrentUser().Result;
+            var delete_actual = fireBaseProvider.RemoveCurrentUserAsync().Result;
             #endregion
 
             #region Assert

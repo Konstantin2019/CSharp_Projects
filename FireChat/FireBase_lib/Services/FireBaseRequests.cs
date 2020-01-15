@@ -29,7 +29,7 @@ namespace FireBase_lib.Services
         private string FullPath(string nodepath) => BaseUrl + nodepath.Trim('/') + JSON_SUFFIX;
 
         /// <summary>
-        /// Метод, реализующий Post-запросы
+        /// Асинхронный метод, реализующий Post-запросы
         /// </summary>
         /// <param name="json">передаваемый контент в формате json</param>
         /// <param name="nodepath">относительный ноды путь</param>
@@ -54,7 +54,7 @@ namespace FireBase_lib.Services
         }
 
         /// <summary>
-        /// Метод, реализующий Get-запросы
+        /// Асинхронный метод, реализующий Get-запросы
         /// </summary>
         /// <param name="nodepath">относительный ноды путь</param>
         /// <returns>ответ в формате json</returns>
@@ -78,7 +78,7 @@ namespace FireBase_lib.Services
         }
 
         /// <summary>
-        /// Метод, реализующий Delete-запросы
+        /// Асинхронный метод, реализующий Delete-запросы
         /// </summary>
         /// <param name="nodepath">относительный ноды путь</param>
         /// <returns>успешность процедуры в булевом выражении</returns>

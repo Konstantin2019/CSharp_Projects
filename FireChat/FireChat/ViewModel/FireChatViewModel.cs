@@ -103,7 +103,7 @@ namespace FireChat.ViewModel
 
         private async void OnWindowClosingExecuted()
         {
-            await fireBaseProvider.RemoveCurrentUser();
+            await fireBaseProvider.RemoveCurrentUserAsync();
             windowsManager.CurrentWindow = null;
             windowsManager.MainWindow.Show();
         }
@@ -137,7 +137,7 @@ namespace FireChat.ViewModel
             var userMessage = new UserMessage { Name = message,
                                                 Value = timeStamp,
                                                 UserName = MessangerActions.CurrentUser.Name };
-            await fireBaseProvider.SendMessage(userMessage);
+            await fireBaseProvider.SendMessageAsync(userMessage);
             message = "";
         }
 
@@ -148,7 +148,7 @@ namespace FireChat.ViewModel
             AuthIsEnabled = false;
 
             var user = new User { Name = name, Value = id };
-            var reg = (RegCodes)await fireBaseProvider.Register(user);
+            var reg = (RegCodes)await fireBaseProvider.RegisterAsync(user);
 
             switch (reg)
             {
@@ -182,7 +182,7 @@ namespace FireChat.ViewModel
             AuthIsEnabled = false;
 
             var user = new User { Name = name, Value = id };
-            var auth = (AuthCodes)await fireBaseProvider.Auth(user);
+            var auth = (AuthCodes)await fireBaseProvider.AuthAsync(user);
 
             switch (auth)
             {

@@ -10,6 +10,7 @@ namespace FireBase_lib.Services
     /// </summary>
     public class MessangerActions
     {
+        #region Variables
         private const int maxNumberOfMessages = 100;
         private const string path = "https://messanger-konst.firebaseio.com/";
         /// <summary>
@@ -33,6 +34,7 @@ namespace FireBase_lib.Services
 
         public event Action<ICollection<User>> OnCurrentUsersReceive;
         public event Action<ICollection<UserMessage>> OnMessagesReceive;
+        #endregion
 
         public MessangerActions()
         {
@@ -40,94 +42,97 @@ namespace FireBase_lib.Services
         }
 
         /// <summary>
-        /// Метод аутентификации
+        /// Асинхронный метод аутентификации
         /// </summary>
         /// <param name="user">пользователь</param>
         /// <returns>код ответа</returns>
-        public async Task<int> Auth(User user)
+        public async Task<int> AuthAsync(User user)
         {
-            string getJson = await DataBase.GetAsync(nodeUsers);
-            if (getJson == null) return -1; // -1 - не удалось произвести аутентификацию
-
-            var users = UtilityHelper.TryDeserialize<User>(getJson);
-
-            if (users != null)
+            var getJson = await DataBase.GetAsync(nodeUsers);
+            if (getJson != null)
             {
-                foreach (var u in users)
+                var users = UtilityHelper.TryDeserialize<User>(getJson);
+
+                if (users != null)
                 {
-                    if (u.Name.ToLower() == user.Name.ToLower() && u.Value == user.Value)
+                    foreach (var u in users)
                     {
-                        CurrentUser = u;
-                        var checkUser = await DataBase.GetAsync(nodeCurrentUsers);
-                        if (checkUser != null)
+                        if (u.Name.ToLower() == user.Name.ToLower() && u.Value == user.Value)
                         {
-                            if (checkUser == "null")
+                            CurrentUser = u;
+                            var checkUserJson = await DataBase.GetAsync(nodeCurrentUsers);
+                            if (checkUserJson != null)
                             {
-                                await AddCurentUser(CurrentUser, nodeCurrentUsers);
-                                return 0; // 0 - аутентификация прошла успешно    
-                            }
-                            var currentUsers = UtilityHelper.TryDeserialize<User>(checkUser);
-                            foreach (var cu in currentUsers)
-                            {
-                                if (cu.Name == CurrentUser.Name && cu.Value == CurrentUser.Value)
+                                var currentUsers = UtilityHelper.TryDeserialize<User>(checkUserJson);
+                                if (currentUsers != null)
                                 {
-                                    return -2; // -2 - такой пользователь уже в сети                               
+                                    foreach (var cU in currentUsers)
+                                    {
+                                        if (cU.Name == CurrentUser.Name && cU.Value == CurrentUser.Value)
+                                            return -2; // -2 - такой пользователь уже в сети 
+                                    }
                                 }
                             }
-                            await AddCurentUser(CurrentUser, nodeCurrentUsers);
-                            return 0; // 0 - аутентификация прошла успешно    
-                        }           
+                            var success = await AddCurentUserAsync(CurrentUser, nodeCurrentUsers);
+                            if (success) return 0; // 0 - аутентификация прошла успешно
+                            else return -1; //не удалось произвести аутентификацию
+                        }
                     }
+
+                    return 1; // 1 - пользователь не найден
                 }
-            }
-            return 1; // 1 - пользователь не найден
-        }
-
-        /// <summary>
-        /// Метод регистрации
-        /// </summary>
-        /// <param name="user">пользователь</param>
-        /// <returns>код ответа</returns>
-        public async Task<int> Register(User user)
-        {
-            string getJson = await DataBase.GetAsync(nodeUsers);
-            if (getJson == null) return -1; // -1 - не удалось произвести регистрацию
-
-            var users = UtilityHelper.TryDeserialize<User>(getJson);
-
-            if (users != null)
-            {
-                foreach (var u in users)
-                    if (u.Name.ToLower() == user.Name.ToLower() && u.Value == user.Value)
-                        return 1; // 1 - такой пользователь уже существует
-            }
-
-            CurrentUser = null;
-
-            var postJson = UtilityHelper.TrySerialize(user);
-
-            if (postJson != null)
-            {
-                bool reg = await DataBase.PostAsync(postJson, nodeUsers);
-                if (reg)
-                {
-                    CurrentUser = user;
-                    var json = UtilityHelper.TrySerialize(CurrentUser);
-                    if (json != null) await DataBase.PostAsync(json, nodeCurrentUsers);
-                    return 0; // 0 - регистрация прошла успешно          
-                }
-                else return -1; // -1 - не удалось произвести регистрацию
             }
 
             return -1;
         }
 
         /// <summary>
-        /// Метод отправки сообщений
+        /// Асинхронный метод регистрации
+        /// </summary>
+        /// <param name="user">пользователь</param>
+        /// <returns>код ответа</returns>
+        public async Task<int> RegisterAsync(User user)
+        {
+            var getJson = await DataBase.GetAsync(nodeUsers);
+            if (getJson != null)
+            {
+                var users = UtilityHelper.TryDeserialize<User>(getJson);
+
+                if (users != null)
+                {
+                    foreach (var u in users)
+                        if (u.Name.ToLower() == user.Name.ToLower() && u.Value == user.Value)
+                            return 1; // 1 - такой пользователь уже существует
+                }
+
+                CurrentUser = null;
+                var postJson = UtilityHelper.TrySerialize(user);
+
+                if (postJson != null)
+                {
+                    var reg = await DataBase.PostAsync(postJson, nodeUsers);
+                    if (reg)
+                    {
+                        CurrentUser = user;
+                        var json = UtilityHelper.TrySerialize(CurrentUser);
+                        if (json != null)
+                        {
+                            var success = await AddCurentUserAsync(CurrentUser, nodeCurrentUsers);
+                            if (success) return 0; // 0 - регистрация прошла успешно
+                        }
+                    }
+                }
+            }
+
+            return -1; // -1 - не удалось произвести регистрацию
+        }
+
+        /// <summary>
+        /// Асинхронный метод отправки сообщений
         /// </summary>
         /// <param name="message">сообщение</param>
         /// <returns>успешность процедуры в булевом выражении</returns>
-        public async Task<bool> SendMessage(UserMessage message)
+        public async Task<bool> SendMessageAsync(UserMessage message)
         {
             var success = false;
             var postJson = UtilityHelper.TrySerialize(message);
@@ -139,38 +144,43 @@ namespace FireBase_lib.Services
         }
 
         /// <summary>
-        /// Метод удаления текущего пользователя
+        /// Асинхронный метод удаления текущего пользователя
         /// </summary>
         /// <returns>текущая задача</returns>
-        public async Task<bool> RemoveCurrentUser()
+        public async Task<bool> RemoveCurrentUserAsync()
         {
-            string childNode = null;
-            bool success = false;
-
-            string getJson = await DataBase.GetAsync(nodeCurrentUsers);
+            var success = false;
+            var getJson = await DataBase.GetAsync(nodeCurrentUsers);
 
             if (getJson != null)
-                childNode = UtilityHelper.GetKey(getJson, CurrentUser);
-
-            if (childNode != null)
             {
-                var nodePath = nodeCurrentUsers + "/" + childNode;
-                success = await DataBase.DeleteAsync(nodePath);
+                var childNode = UtilityHelper.GetKey(getJson, CurrentUser);
+
+                if (childNode != null)
+                {
+                    var nodePath = nodeCurrentUsers + "/" + childNode;
+                    success = await DataBase.DeleteAsync(nodePath);
+                }
             }
 
             return success;
         }
 
         /// <summary>
-        /// Метод добавления текущего пользователя
+        /// Асинхронный метод добавления текущего пользователя
         /// </summary>
         /// <param name="user">пользователь</param>
         /// <param name="node">нода</param>
         /// <returns>текущая задача</returns>
-        private async Task AddCurentUser(User user, string node)
+        private async Task<bool> AddCurentUserAsync(User user, string node)
         {
+            var success = false;
+
             var json = UtilityHelper.TrySerialize(user);
-            if (json != null) await DataBase.PostAsync(json, node);
+            if (json != null)
+                success = await DataBase.PostAsync(json, node);
+
+            return success;
         }
 
         /// <summary>
@@ -181,7 +191,7 @@ namespace FireBase_lib.Services
         {
             while (true)
             {
-                string getJson = await DataBase.GetAsync(nodeCurrentUsers);
+                var getJson = await DataBase.GetAsync(nodeCurrentUsers);
                 if (getJson.Length != jsonCurrentUsersLength)
                 {
                     jsonCurrentUsersLength = getJson.Length;
@@ -200,7 +210,7 @@ namespace FireBase_lib.Services
         {
             while (true)
             {
-                string getJson = await DataBase.GetAsync(nodeMessages);
+                var getJson = await DataBase.GetAsync(nodeMessages);
                 if (getJson.Length > jsonMessagesLength)
                 {
                     jsonMessagesLength = getJson.Length;

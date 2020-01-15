@@ -15,6 +15,7 @@ namespace VkBot
     /// </summary>
     public class VkService
     {
+        #region Variables
         private static string access_token;
         private int client_id;
         private int group_id;
@@ -32,13 +33,13 @@ namespace VkBot
         {
             friends, photos, audio, video, messages
         }
+        #endregion
 
         /// <summary>
         /// Метод по получению client_id и group_id
         /// </summary>
         /// <param name="path">путь к файлу</param>
         /// <returns>словарь с client_id и group_id</returns>
-        #region GetIds
         private Dictionary<string, int> GetPrivateInfo(string path)
         {
             try
@@ -48,7 +49,7 @@ namespace VkBot
                 var gr_id = int.Parse(content[1].Split('=')[1]);
 
                 if (cl_id != 0 && gr_id != 0)
-                    return new Dictionary<string, int>() { { "client_id", cl_id }, {"group_id", gr_id} };
+                    return new Dictionary<string, int>() { { "client_id", cl_id }, { "group_id", gr_id } };
                 else
                     return null;
             }
@@ -57,12 +58,10 @@ namespace VkBot
                 return null;
             }
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по получению строки с содержанием токена доступа группы
         /// </summary>
-        #region GetAccessTokenUriAsync
         public async Task GetAccessTokenUriAsync()
         {
             var ids = GetPrivateInfo(ids_path);
@@ -84,7 +83,6 @@ namespace VkBot
                 await Task.Run(() => { Process.Start(auth_request); });
             }
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по получению словаря с содержанием токена группы, времени его валидности, 
@@ -93,14 +91,13 @@ namespace VkBot
         /// <param name="uri">строка с содержанием токена доступа группы</param>
         /// <param name="saving_path">путь для сохранения словаря</param>
         /// <returns>объект класса Response, содержащий словарь и строку с Exception.Message</returns>
-        #region GetAccessTokenAsync
         public async Task<Response<Dictionary<string, string>>> GetTokenAsync(string uri, string saving_path)
         {
             var token_info = new Dictionary<string, string>();
 
             try
             {
-                await Task.Run(() => 
+                await Task.Run(() =>
                 {
                     var split = uri.Split('&', '#');
 
@@ -128,7 +125,6 @@ namespace VkBot
                 return new Response<Dictionary<string, string>> { Value = null, Error = error.Message };
             }
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по сохранению словаря на диск
@@ -136,7 +132,6 @@ namespace VkBot
         /// <param name="token_path">путь к файлу на диске</param>
         /// <param name="token_info">словарь</param>
         /// <returns>успешность выполнения задачи в булевом выражении</returns>
-        #region SaveOnDiskAsync
         private async Task<bool> SaveAsync(string token_path, Dictionary<string, string> token_info)
         {
             using (StreamWriter wr = new StreamWriter(token_path))
@@ -157,14 +152,12 @@ namespace VkBot
             }
             return true;
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по чтению словаря из файла
         /// </summary>
         /// <param name="token_path">путь к файлу на диске</param>
         /// <returns>словарь с данными токена</returns>
-        #region ReadFromDiskAsync
         private async Task<Dictionary<string, string>> ReadAsync(string token_path)
         {
             if (!File.Exists(token_path)) return null;
@@ -194,14 +187,12 @@ namespace VkBot
             }
             return token_info;
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по валидации токена группы, записанного в файл на диск
         /// </summary>
         /// <param name="token_path">путь к файлу на диске</param>
         /// <returns>успешность выполнения задачи в булевом выражении</returns>
-        #region ValidateAccessTokenAsync
         public async Task<bool> ValidateAsync(string token_path)
         {
             var token_info = await ReadAsync(token_path);
@@ -223,14 +214,12 @@ namespace VkBot
             else
                 return false;
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по получению словаря членов группы с исключением администрации
         /// </summary>
         /// <returns>объект класса Response, содержащий словарь(id пользователя, имя пользователя) 
         /// и строку с Exception.Message</returns>
-        #region GetTargetMembersAsync
         private async Task<Response<Dictionary<int, string>>> GetUsersAsync()
         {
             var get_managers_request = method
@@ -289,14 +278,12 @@ namespace VkBot
                 return new Response<Dictionary<int, string>> { Value = null, Error = error.Message };
             }
         }
-        #endregion
 
         /// <summary>
         /// Асинхронный метод по рассылке сообщений внтури сообщества
         /// </summary>
         /// <param name="message">текст сообщения членам группы</param>
         /// <returns>коллекция ответов в json формате</returns>
-        #region SendMessagesAsync
         public async Task<ICollection<string>> SendAsync(string message)
         {
             Dictionary<int, string> users = new Dictionary<int, string>();
@@ -309,7 +296,7 @@ namespace VkBot
 
             var send_message_request = method
                                        + "messages.send"
-                                       + "?"; 
+                                       + "?";
             var content = new Dictionary<string, string>()
             {
                 { "user_id", ""},
@@ -334,6 +321,5 @@ namespace VkBot
 
             return post_responses;
         }
-        #endregion
     }
 }
