@@ -53,7 +53,10 @@ namespace MailSender_lib.Services.Abstract
                 var jsonString = File.ReadAllText(path);
                 items = JsonSerializer.Deserialize<List<T>>(jsonString);
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                items = new List<T>();
+            }
         }
     }
 }
