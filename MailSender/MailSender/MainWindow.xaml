@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
+        xmlns:data="clr-namespace:MailSender_lib.Model;assembly=MailSender_lib"
         mc:Ignorable="d"
         Title="{Binding Path=WindowTitle}" Height="400" Width="800"
         DataContext="{Binding Path=MailSenderVM, Source={StaticResource Locator}}">
@@ -63,17 +64,23 @@
                         <ToolBar MinWidth="385">
                             <StackPanel Orientation="Horizontal">
                                 <ComboBox MinWidth="280"
-                                          ToolTip="Отправители"/>
+                                          ToolTip="Отправители"
+                                          DisplayMemberPath="Name"
+                                          ItemsSource="{Binding Path=Senders}"
+                                          SelectedItem="{Binding Path=SelectedSender}"/>
                                 <Button Height="25"
-                                        ToolTip="Добавить">
+                                        ToolTip="Добавить"
+                                        Command="{Binding Path=CreateSenderCommand}">
                                     <fa:ImageAwesome Icon="Plus" Foreground="DarkBlue"/>
                                 </Button>
                                 <Button Height="25"
-                                        ToolTip="Редактировать">
+                                        ToolTip="Редактировать"
+                                        Command="{Binding Path=EditSenderCommand}">
                                     <fa:ImageAwesome Icon="Edit" Foreground="Green"/>
                                 </Button>
                                 <Button Height="25"
-                                        ToolTip="Удалить">
+                                        ToolTip="Удалить"
+                                        Command="{Binding Path=DeleteSenderCommand}">
                                     <fa:ImageAwesome Icon="Ban" Foreground="Red"/>
                                 </Button>
                             </StackPanel>
@@ -81,17 +88,23 @@
                         <ToolBar MinWidth="385">
                             <StackPanel Orientation="Horizontal">
                                 <ComboBox MinWidth="280"
-                                          ToolTip="Серверы"/>
+                                          ToolTip="Серверы"
+                                          DisplayMemberPath="Name"
+                                          ItemsSource="{Binding Path=Servers}"
+                                          SelectedItem="{Binding Path=SelectedServer}"/>
                                 <Button Height="25"
-                                        ToolTip="Добавить">
+                                        ToolTip="Добавить"
+                                        Command="{Binding Path=CreateServerCommand}">
                                     <fa:ImageAwesome Icon="Plus" Foreground="DarkBlue"/>
                                 </Button>
                                 <Button Height="25"
-                                        ToolTip="Редактировать">
+                                        ToolTip="Редактировать"
+                                        Command="{Binding Path=EditSeverCommand}">
                                     <fa:ImageAwesome Icon="Edit" Foreground="Green"/>
                                 </Button>
                                 <Button Height="25"
-                                        ToolTip="Удалить">
+                                        ToolTip="Удалить"
+                                        Command="{Binding Path=DeleteSenderCommand}">
                                     <fa:ImageAwesome Icon="Ban" Foreground="Red"/>
                                 </Button>
                             </StackPanel>
@@ -103,15 +116,18 @@
                                            Text="Получатели"
                                            TextAlignment="Center"/>
                                 <Button Height="25"
-                                        ToolTip="Добавить">
+                                        ToolTip="Добавить"
+                                        Command="{Binding Path=CreateRecipientCommand}">
                                     <fa:ImageAwesome Icon="Plus" Foreground="DarkBlue"/>
                                 </Button>
                                 <Button Height="25"
-                                        ToolTip="Редактировать">
+                                        ToolTip="Редактировать"
+                                        Command="{Binding Path=EditRecipientCommand}">
                                     <fa:ImageAwesome Icon="Edit" Foreground="Green"/>
                                 </Button>
                                 <Button Height="25"
-                                        ToolTip="Удалить">
+                                        ToolTip="Удалить"
+                                        Command="{Binding Path=DeleteRecipientCommand}">
                                     <fa:ImageAwesome Icon="Ban" Foreground="Red"/>
                                 </Button>
                             </StackPanel>
@@ -122,7 +138,8 @@
                                            Text="Планировщик"
                                            TextAlignment="Center"/>
                             <Button Height="25"
-                                    ToolTip="Перейти в планировщик">
+                                    ToolTip="Перейти в планировщик"
+                                    Command="{Binding Path=GoToShedulerCommand}">
                                 <fa:ImageAwesome Icon="CalendarTimesOutline" Foreground="OrangeRed"/>
                             </Button>
                         </ToolBar>
@@ -142,13 +159,14 @@
                                   GridLinesVisibility="Vertical"
                                   AlternatingRowBackground="Azure"
                                   IsReadOnly="True"
-                                  MinHeight="170">
+                                  MinHeight="170"
+                                  ItemsSource="{Binding Path=Recipients}"
+                                  SelectedItem="{Binding Path=SelectedRecipient}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID"/>
-                                <DataGridTextColumn Header="Имя"/>
-                                <DataGridTextColumn Header="Адрес"/>
-                                <DataGridTextColumn Header="Описание" 
-                                                Width="*"/>
+                                <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
+                                <DataGridTextColumn Header="Имя" Binding="{Binding Name}"/>
+                                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}"/>
+                                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -165,17 +183,20 @@
                         <Calendar/>
                         <Button Height="25"
                                 Margin="8,4,8,0"
-                                ToolTip="Запланировать">
+                                ToolTip="Запланировать"
+                                Command="{Binding Path=PlanCommand}">
                             <fa:ImageAwesome Icon="ClockOutline" Foreground="ForestGreen"/>
                         </Button>
                         <Button Height="25"
                                 Margin="8,4,8,0"
-                                ToolTip="Немедленно отправить">
+                                ToolTip="Немедленно отправить"
+                                Command="{Binding Path=SendCommand}">
                             <fa:ImageAwesome Icon="PaperPlane" Foreground="DarkBlue"/>
                         </Button>
                         <Button Height="25"
                                 Margin="8,4,8,0"
-                                ToolTip="Перейти в письма">
+                                ToolTip="Перейти в письма"
+                                Command="{Binding Path=GoToEMailCommand}">
                             <fa:ImageAwesome Icon="EnvelopeOpen" Foreground="LightCoral"/>
                         </Button>
                     </StackPanel>
@@ -185,54 +206,65 @@
                             <TextBlock Text="Отправитель"
                                        FontSize="16"
                                        MinWidth="100"/>
-                            <ComboBox MinWidth="480"/>
+                            <ComboBox MinWidth="480"
+                                      DisplayMemberPath="Name"
+                                      ItemsSource="{Binding Path=Senders}"
+                                      SelectedItem="{Binding Path=SelectedSender}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
                                     Margin="0,5,0,0">
                             <TextBlock Text="Получатель"
                                        FontSize="16"
                                        MinWidth="100"/>
-                            <ComboBox MinWidth="430"/>
+                            <ComboBox MinWidth="430"
+                                      DisplayMemberPath="Name"
+                                      ItemsSource="{Binding Path=Recipients}"
+                                      SelectedItem="{Binding Path=SelectedRecipient}"/>
                             <TextBlock Text="Все"
                                        FontSize="16"
                                        Margin="5,0,5,0"/>
-                            <CheckBox VerticalAlignment="Center"/>
+                            <CheckBox VerticalAlignment="Center"
+                                      IsChecked="{Binding Path=AllRecipients}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
                                     Margin="0,5,0,0">
                             <TextBlock Text="Письмо"
                                        FontSize="16"
                                        MinWidth="100"/>
-                            <ComboBox MinWidth="480"/>
+                            <ComboBox MinWidth="480"
+                                      DisplayMemberPath="Name"
+                                      ItemsSource="{Binding Path=Emails}"
+                                      SelectedItem="{Binding Path=SelectedEmail}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
                                     Margin="0,5,0,0">
                             <TextBlock Text="Время"
                                        FontSize="16"
                                        MinWidth="100"/>
-                            <ComboBox MinWidth="480"/>
+                            <ComboBox MinWidth="480"
+                                      ItemsSource="{x:Static data:Time.LocalTime}"
+                                      SelectedItem="{Binding Path=SelectedTime}"/>
                         </StackPanel>
                         <TextBlock Text="Список задач"
                                    FontStyle="Italic"
                                    FontSize="16"
                                    TextAlignment="Center"/>
-                        <ListView MinHeight="125"
-                                  Margin="0,5,5,0">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="ID"
-                                                    Width="45"/>
-                                    <GridViewColumn Header="Дата/Время"
-                                                    Width="135"/>
-                                    <GridViewColumn Header="Отправитель"
-                                                    Width="135"/>
-                                    <GridViewColumn Header="Получатель"
-                                                    Width="135"/>
-                                    <GridViewColumn Header="Письмо"
-                                                    Width="135"/>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
+                        <DataGrid Grid.Row="1"
+                                  AutoGenerateColumns="False" 
+                                  GridLinesVisibility="Vertical"
+                                  AlternatingRowBackground="Azure"
+                                  IsReadOnly="True"
+                                  MinHeight="130"
+                                  ItemsSource="{Binding Path=ShedulerTasks}"
+                                  SelectedItem="{Binding Path=SelectedShedulerTask}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
+                                <DataGridTextColumn Header="Дата/Время" Binding="{Binding Time}"/>
+                                <DataGridTextColumn Header="Отправитель" Binding="{Binding Sender}"/>
+                                <DataGridTextColumn Header="Получатель" Binding="{Binding Recipient}"/>
+                                <DataGridTextColumn Header="Письмо" Binding="{Binding Email}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -246,14 +278,17 @@
                         <TextBox MinWidth="640"
                                  FontSize="16"
                                  VerticalAlignment="Center"
-                                 Margin="5"/>
+                                 Margin="5"
+                                 Text="{Binding Path=EmailSubject}"/>
                         <Button Height="25"
-                                ToolTip="Сформировать письмо">
+                                ToolTip="Сформировать письмо"
+                                Command="{Binding Path=CreateEmailCommand}">
                             <fa:ImageAwesome Icon="Envelope" Foreground="Red"/>
                         </Button>
                     </StackPanel>
                     <TextBox MinHeight="230"
-                             Margin="5"/>
+                             Margin="5"
+                             Text="{Binding Path=EmailBody}"/>
                 </StackPanel>
             </TabItem>
         </TabControl>

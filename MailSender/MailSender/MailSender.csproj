@@ -73,8 +73,50 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AddRecipient.xaml.cs">
+      <DependentUpon>AddRecipient.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AddSender.xaml.cs">
+      <DependentUpon>AddSender.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AddServer.xaml.cs">
+      <DependentUpon>AddServer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditRecipient.xaml.cs">
+      <DependentUpon>EditRecipient.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditSender.xaml.cs">
+      <DependentUpon>EditSender.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditServer.xaml.cs">
+      <DependentUpon>EditServer.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ViewModel\MailSenderViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
+    <Page Include="AddRecipient.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AddSender.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AddServer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditRecipient.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditSender.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditServer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -1,0 +1,91 @@
+﻿<Window x:Class="MailSender.AddServer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MailSender"
+        mc:Ignorable="d"
+        Title="Новый сервер" Height="200" Width="400"
+        DataContext="{Binding Path=MailSenderVM, Source={StaticResource Locator}}">
+    <StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Имя" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="1"/>
+            <TextBlock Text="Порт" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="2"/>
+            <TextBlock Text="Хост" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="3"/>
+            <TextBlock Text="Имя пользователя" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="4"/>
+            <TextBlock Text="Пароль пользователя" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="5"/>
+            <TextBlock Text="Описание" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="6"/>
+            <TextBlock Text="Шифрование" 
+                       FontSize="16" 
+                       Margin="0,0,5,0" 
+                       Grid.Column="0" 
+                       Grid.Row="7"/>
+            <TextBox Grid.Column="1" 
+                     Grid.Row="1"
+                     FontSize="16"
+                     Text="{Binding Path=NewServer.Name, NotifyOnValidationError=True}"/>
+            <TextBox Grid.Column="1" 
+                     Grid.Row="2" 
+                     FontSize="16"
+                     Text="{Binding Path=NewServer.Port, NotifyOnValidationError=True}"/>
+            <TextBox Grid.Column="1" 
+                     Grid.Row="3" 
+                     FontSize="16"
+                     Text="{Binding Path=NewServer.Host, NotifyOnValidationError=True}"/>
+            <TextBox Grid.Column="1" 
+                     Grid.Row="4" 
+                     FontSize="16"
+                     Text="{Binding Path=NewServer.UserName, NotifyOnValidationError=True}"/>
+            <TextBox Grid.Column="1" 
+                     Grid.Row="5" 
+                     FontSize="16"
+                     Text="{Binding Path=NewServer.Password, NotifyOnValidationError=True}"/>
+            <TextBox Grid.Column="1" 
+                     Grid.Row="6" 
+                     FontSize="16"
+                     Text="{Binding Path=NewServer.Description}"/>
+            <CheckBox Grid.Column="1" 
+                      Grid.Row="7" 
+                      HorizontalAlignment="Center"
+                      IsChecked="{Binding Path=NewServer.Ssl}"/>
+        </Grid>
+    </StackPanel>
+</Window>
