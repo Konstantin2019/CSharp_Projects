@@ -150,9 +150,11 @@
                                     Margin="0,5,0,5">
                             <TextBlock Text="Фильтр : "
                                        FontSize="16"/>
-                            <TextBox MinWidth="710"
+                            <TextBox MinWidth="640"
                                      FontSize="16"
                                      Text="{Binding Path=Filter}"/>
+                            <Button Content="Обновить"
+                                    Command="{Binding Path=TotalRefreshCommand}"/>
                         </StackPanel>
                         <DataGrid Grid.Row="1"
                                   AutoGenerateColumns="False" 

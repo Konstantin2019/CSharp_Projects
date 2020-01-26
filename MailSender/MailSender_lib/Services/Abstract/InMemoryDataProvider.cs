@@ -1,16 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using MailSender_lib.Model.Base;
-using System.IO;
-using System.Text.Json;
-using System;
+using Newtonsoft.Json;
 
 namespace MailSender_lib.Services.Abstract
 {
     public abstract class InMemoryDataProvider<T> : IDBProvider<T> where T : BaseEntity
     {
         protected string path;
-        protected List<T> items;
+        protected List<T> items = new List<T>();
 
         public IEnumerable<T> GetAll() => items;
 
@@ -36,7 +36,7 @@ namespace MailSender_lib.Services.Abstract
         {
             try
             {
-                var jsonString = JsonSerializer.Serialize(items);
+                var jsonString = JsonConvert.SerializeObject(items);
                 File.WriteAllText(path, jsonString);
                 return true;
             }
@@ -46,16 +46,17 @@ namespace MailSender_lib.Services.Abstract
             }
         }
 
-        public void Init()
+        public bool ReadData()
         {
             try
             {
                 var jsonString = File.ReadAllText(path);
-                items = JsonSerializer.Deserialize<List<T>>(jsonString);
+                items = JsonConvert.DeserializeObject<List<T>>(jsonString);
+                return true;
             }
             catch (Exception)
             {
-                items = new List<T>();
+                return false;
             }
         }
     }

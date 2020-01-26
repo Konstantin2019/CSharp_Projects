@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MailSender"
         mc:Ignorable="d"
-        Title="Новый отправитель" Height="110" Width="400"
+        Title="Новый отправитель" Height="160" Width="400"
         DataContext="{Binding Path=MailSenderVM, Source={StaticResource Locator}}">
     <StackPanel>
         <Grid>
@@ -17,35 +17,53 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
             <TextBlock Text="Имя" 
                        FontSize="16" 
-                       Margin="0,0,5,0" 
+                       Margin="5,5,5,0" 
                        Grid.Column="0" 
                        Grid.Row="1"/>
             <TextBlock Text="Адрес" 
                        FontSize="16" 
-                       Margin="0,0,5,0" 
+                       Margin="5,5,5,0" 
                        Grid.Column="0" 
                        Grid.Row="2"/>
             <TextBlock Text="Сервер" 
                        FontSize="16" 
-                       Margin="0,0,5,0" 
+                       Margin="5,5,5,0" 
                        Grid.Column="0" 
                        Grid.Row="3"/>
             <TextBox Grid.Column="1" 
                      Grid.Row="1"
                      FontSize="16"
+                     Margin="0,5,5,0"
                      Text="{Binding Path=NewSender.Name, NotifyOnValidationError=True}"/>
             <TextBox Grid.Column="1" 
                      Grid.Row="2" 
                      FontSize="16"
+                     Margin="0,5,5,0"
                      Text="{Binding Path=NewSender.Address, NotifyOnValidationError=True}"/>
             <ComboBox Grid.Column="1" 
                       Grid.Row="3" 
                       FontSize="16"
+                      Margin="0,5,5,0"
                       ItemsSource="{Binding Path=NewSender.Server}" DisplayMemberPath="Name"/>
+            <StackPanel Grid.Column="0"
+                        Grid.Row="4"
+                        Grid.ColumnSpan="2"
+                        Height="25"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,5,0,0">
+                <Button Content="Подтвердить"
+                        MinWidth="100"
+                        Command="{Binding Path=AcceptCommand}"/>
+                <Button Content="Отменить"
+                        MinWidth="100"
+                        Command="{Binding Path=AbortCommand}"/>
+            </StackPanel>
         </Grid>
     </StackPanel>
 </Window>

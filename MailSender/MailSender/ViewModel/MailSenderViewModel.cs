@@ -1,14 +1,27 @@
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using MailSender.ViewModel.WPFServices;
 using MailSender_lib.Model;
+using MailSender_lib.Model.Base;
+using MailSender_lib.Services;
+using MailSender_lib.Services.InMemory;
 using System;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 
 namespace MailSender.ViewModel
 {
     public class MailSenderViewModel : ViewModelBase
     {
+        private InMemorySenderProvider senderProvider;
+        private InMemoryServerProvider serverProvider;
+        private InMemoryRecipientProvider recipientProvider;
+        private InMemoryEmailProvider emailProvider;
+        private InMemoryShedulerProvider shedulerProvider;
+        private MailSenderService emailService;
+        private WindowsService windowsService;
+
         private string windowTitle = "Рассыльщик почты v1.0";
         private string filter;
         private string emailSubject;
@@ -122,11 +135,11 @@ namespace MailSender.ViewModel
             set => Set(ref selectedTime, value);
         }
 
-        public ObservableCollection<Sender> Senders { get; }
-        public ObservableCollection<Server> Servers { get; }
-        public ObservableCollection<Recipient> Recipients { get; }
-        public ObservableCollection<Email> Emails { get; }
-        public ObservableCollection<ShedulerTask> ShedulerTasks { get; }
+        public ObservableCollection<Sender> Senders { get; private set; }
+        public ObservableCollection<Server> Servers { get; private set; }
+        public ObservableCollection<Recipient> Recipients { get; private set; }
+        public ObservableCollection<Email> Emails { get; private set; }
+        public ObservableCollection<ShedulerTask> ShedulerTasks { get; private set; }
 
         public ICommand CreateSenderCommand { get; }
         public ICommand EditSenderCommand { get; }
@@ -147,10 +160,28 @@ namespace MailSender.ViewModel
         public ICommand SendCommand { get; }
         public ICommand CreateEmailCommand { get; }
 
-        public MailSenderViewModel()
+        public ICommand AcceptCommand { get; }
+        public ICommand AbortCommand { get; }
+        public ICommand TotalRefreshCommand { get; }
+
+        public MailSenderViewModel(MailSenderService EmailService, WindowsService WindowsService)
         {
+            windowsService = WindowsService;
+            emailService = EmailService;
+            senderProvider = new InMemorySenderProvider("DataBase/Senders.db");
+            serverProvider = new InMemoryServerProvider("DataBase/Servers.db");
+            recipientProvider = new InMemoryRecipientProvider("DataBase/Recipients.db");
+            emailProvider = new InMemoryEmailProvider("DataBase/Emails.db");
+            shedulerProvider = new InMemoryShedulerProvider("DataBase/ShedulerTasks.db");
+
+            Senders = new ObservableCollection<Sender>();
+            Servers = new ObservableCollection<Server>();
+            Recipients = new ObservableCollection<Recipient>();
+            Emails = new ObservableCollection<Email>();
+            ShedulerTasks = new ObservableCollection<ShedulerTask>();
+
             CreateSenderCommand = new RelayCommand(OnCreateSenderCommand);
-            EditRecipientCommand = new RelayCommand(OnEditRecipientCommand);
+            EditSenderCommand = new RelayCommand(OnEditSenderCommand);
             DeleteSenderCommand = new RelayCommand(OnDeleteSenderCommand);
 
             CreateServerCommand = new RelayCommand(OnCreateServerCommand);
@@ -167,11 +198,124 @@ namespace MailSender.ViewModel
             PlanCommand = new RelayCommand(OnPlanCommand);
             SendCommand = new RelayCommand(OnSendCommand);
             CreateEmailCommand = new RelayCommand(OnCreateEmailCommand);
+
+            AcceptCommand = new RelayCommand(OnAcceptCommand);
+            AbortCommand = new RelayCommand(OnAbortCommand);
+            TotalRefreshCommand = new RelayCommand(OnTotalRefreshCommand);
+        }
+
+        private void Refresh<T>(ObservableCollection<T> collection) where T : BaseEntity
+        {
+            if (collection != null)
+                collection.Clear();
+
+            if (collection is ObservableCollection<Sender>)
+            {
+                var success = senderProvider.ReadData();
+                if (success)
+                {
+                    var items = senderProvider.GetAll();
+                    foreach (var item in items)
+                        Senders.Add(item);
+                }
+            }
+
+            if (collection is ObservableCollection<Server>)
+            {
+                var success = serverProvider.ReadData();
+                if (success)
+                {
+                    var items = serverProvider.GetAll();
+                    foreach (var item in items)
+                        Servers.Add(item);
+                }
+            }
+
+            if (collection is ObservableCollection<Recipient>)
+            {
+                var success = recipientProvider.ReadData();
+                if (success)
+                {
+                    var items = recipientProvider.GetAll();
+                    foreach (var item in items)
+                        Recipients.Add(item);
+                }
+            }
+        }
+
+        private void OnTotalRefreshCommand()
+        {
+            Refresh(Senders);
+            Refresh(Servers);
+            Refresh(Recipients);
+        }
+
+        private void OnAbortCommand()
+        {
+            WindowsService.InputDataWindow.Close();
+        }
+
+        private void OnAcceptCommand()
+        {
+            if (WindowsService.InputDataWindow is AddSender)
+            {
+                senderProvider.Create(NewSender);
+                var success = senderProvider.SaveChanges();
+                if (success)
+                    Refresh(Senders);
+            }
+
+            if (WindowsService.InputDataWindow is EditSender)
+            {
+                senderProvider.Edit(SelectedSender.Id, SelectedSender);
+                var success = senderProvider.SaveChanges();
+                if (success)
+                    Refresh(Senders);
+            }
+
+            if (WindowsService.InputDataWindow is AddServer)
+            {
+                serverProvider.Create(NewServer);
+                var success = serverProvider.SaveChanges();
+                if (success)
+                    Refresh(Servers);
+            }
+
+            if (WindowsService.InputDataWindow is EditServer)
+            {
+                serverProvider.Edit(SelectedServer.Id, SelectedServer);
+                var success = serverProvider.SaveChanges();
+                if (success)
+                    Refresh(Servers);
+            }
+
+            if (WindowsService.InputDataWindow is AddRecipient)
+            {
+                recipientProvider.Create(NewRecipient);
+                var success = recipientProvider.SaveChanges();
+                if (success)
+                    Refresh(Recipients);
+            }
+
+            if (WindowsService.InputDataWindow is EditRecipient)
+            {
+                recipientProvider.Edit(SelectedRecipient.Id, SelectedRecipient);
+                var success = recipientProvider.SaveChanges();
+                if (success)
+                    Refresh(Recipients);
+            }
+
+            WindowsService.InputDataWindow.Close();
         }
 
         private void OnCreateEmailCommand()
         {
-            throw new NotImplementedException();
+            NewEmail = new Email()
+            {
+                Subject = EmailBody, Body = EmailBody
+            };
+            emailProvider.Create(NewEmail);
+            emailProvider.SaveChanges();
         }
 
         private void OnGoToEMailCommand()
@@ -201,12 +345,15 @@ namespace MailSender.ViewModel
 
         private void OnEditRecipientCommand()
         {
-            throw new NotImplementedException();
+            var window = windowsService.CreateWindow<EditRecipient>();
+            window.ShowDialog();
         }
 
         private void OnCreateRecipientCommand()
         {
-            throw new NotImplementedException();
+            NewRecipient = new Recipient();
+            var window = windowsService.CreateWindow<AddRecipient>();
+            window.ShowDialog();
         }
 
         private void OnDeleteServerCommand()
@@ -216,12 +363,15 @@ namespace MailSender.ViewModel
 
         private void OnEditSeverCommand()
         {
-            throw new NotImplementedException();
+            var window = windowsService.CreateWindow<EditServer>();
+            window.ShowDialog();
         }
 
         private void OnCreateServerCommand()
         {
-            throw new NotImplementedException();
+            newServer = new Server();
+            var window = windowsService.CreateWindow<AddServer>();
+            window.ShowDialog();
         }
 
         private void OnDeleteSenderCommand()
@@ -229,9 +379,17 @@ namespace MailSender.ViewModel
             throw new NotImplementedException();
         }
 
+        private void OnEditSenderCommand()
+        {
+            var window = windowsService.CreateWindow<EditSender>();
+            window.ShowDialog();
+        }
+
         private void OnCreateSenderCommand()
         {
-            throw new NotImplementedException();
+            NewSender = new Sender();
+            var window = windowsService.CreateWindow<AddSender>();
+            window.ShowDialog();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace MailSender_lib.Services.InMemory
         public InMemoryServerProvider(string filename)
         {
             path = filename;
-            Init();
+            ReadData();
         }
 
         public override void Edit(int id, Server item)

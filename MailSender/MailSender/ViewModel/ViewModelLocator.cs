@@ -1,6 +1,7 @@
 using System;
 using CommonServiceLocator;
 using GalaSoft.MvvmLight.Ioc;
+using MailSender.ViewModel.WPFServices;
 using MailSender_lib.Services;
 using MailSender_lib.Services.InMemory;
 
@@ -22,7 +23,8 @@ namespace MailSender.ViewModel
                    .TryRegister<InMemorySenderProvider>()
                    .TryRegister<InMemoryServerProvider>()
                    .TryRegister<InMemoryShedulerProvider>()
-                   .TryRegister<MailSenderService>();
+                   .TryRegister<MailSenderService>()
+                   .TryRegister<WindowsService>();
         }
 
         public MailSenderViewModel MailSenderVM

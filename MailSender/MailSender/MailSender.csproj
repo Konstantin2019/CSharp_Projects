@@ -92,7 +92,9 @@
       <DependentUpon>EditServer.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModel\MailSenderViewModel.cs" />
+    <Compile Include="ViewModel\ObservableExtention.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
+    <Compile Include="ViewModel\WPFServices\WindowsService.cs" />
     <Page Include="AddRecipient.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
