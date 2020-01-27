@@ -24,8 +24,6 @@ namespace MailSender.ViewModel
 
         private string windowTitle = "Рассыльщик почты v1.0";
         private string filter;
-        private string emailSubject;
-        private string emailBody;
         private bool allRecipients;
         private Sender newSender;
         private Sender selectedSender;
@@ -33,7 +31,8 @@ namespace MailSender.ViewModel
         private Server selectedServer;
         private Recipient newRecipient;
         private Recipient selectedRecipient;
-        private Email newEmail;
+        private string emailSubject;
+        private string emailBody;
         private Email selectedEmail;
         private ShedulerTask newShedulerTask;
         private ShedulerTask selectedShedulerTask;
@@ -49,18 +48,6 @@ namespace MailSender.ViewModel
         {
             get => filter;
             set => Set(ref filter, value);
-        }
-
-        public string EmailSubject
-        {
-            get => emailSubject;
-            set => Set(ref emailSubject, value);
-        }
-
-        public string EmailBody
-        {
-            get => emailBody;
-            set => Set(ref emailBody, value);
         }
 
         public bool AllRecipients
@@ -105,10 +92,16 @@ namespace MailSender.ViewModel
             set => Set(ref selectedRecipient, value);
         }
 
-        public Email NewEmail
+        public string EmailSubject
         {
-            get => newEmail;
-            set => Set(ref newEmail, value);
+            get => emailSubject;
+            set => Set(ref emailSubject, value);
+        }
+
+        public string EmailBody
+        {
+            get => emailBody;
+            set => Set(ref emailBody, value);
         }
 
         public Email SelectedEmail
@@ -238,6 +231,26 @@ namespace MailSender.ViewModel
                     items.ToObservableCollection(Recipients);
                 }
             }
+
+            if (collection is ObservableCollection<Email>)
+            {
+                var success = emailProvider.ReadData();
+                if (success)
+                {
+                    var items = emailProvider.GetAll();
+                    items.ToObservableCollection(Emails);
+                }
+            }
+
+            if (collection is ObservableCollection<ShedulerTask>)
+            {
+                var success = shedulerProvider.ReadData();
+                if (success)
+                {
+                    var items = shedulerProvider.GetAll();
+                    items.ToObservableCollection(ShedulerTasks);
+                }
+            }
         }
 
         private void OnTotalRefreshCommand()
@@ -245,6 +258,8 @@ namespace MailSender.ViewModel
             Refresh(Senders);
             Refresh(Servers);
             Refresh(Recipients);
+            Refresh(Emails);
+            Refresh(ShedulerTasks);
         }
 
         private void OnAbortCommand()
@@ -307,12 +322,12 @@ namespace MailSender.ViewModel
 
         private void OnCreateEmailCommand()
         {
-            NewEmail = new Email()
-            {
-                Subject = EmailBody, Body = EmailBody
-            };
-            emailProvider.Create(NewEmail);
-            emailProvider.SaveChanges();
+            emailProvider.Create(new Email() {Subject = EmailSubject, Body = EmailBody });
+            EmailSubject = "";
+            EmailBody = "";
+            var success = emailProvider.SaveChanges();
+            if (success)
+                Refresh(Emails);
         }
 
         private void OnGoToEMailCommand()

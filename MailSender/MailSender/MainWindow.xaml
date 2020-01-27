@@ -234,7 +234,7 @@
                                        FontSize="16"
                                        MinWidth="100"/>
                             <ComboBox MinWidth="480"
-                                      DisplayMemberPath="Name"
+                                      DisplayMemberPath="Subject"
                                       ItemsSource="{Binding Path=Emails}"
                                       SelectedItem="{Binding Path=SelectedEmail}"/>
                         </StackPanel>
@@ -281,7 +281,7 @@
                                  FontSize="16"
                                  VerticalAlignment="Center"
                                  Margin="5"
-                                 Text="{Binding Path=EmailSubject}"/>
+                                 Text="{Binding Path=EmailSubject, Mode=TwoWay}"/>
                         <Button Height="25"
                                 ToolTip="Сформировать письмо"
                                 Command="{Binding Path=CreateEmailCommand}">
@@ -290,7 +290,8 @@
                     </StackPanel>
                     <TextBox MinHeight="230"
                              Margin="5"
-                             Text="{Binding Path=EmailBody}"/>
+                             FontSize="16"
+                             Text="{Binding Path=EmailBody, Mode=TwoWay}"/>
                 </StackPanel>
             </TabItem>
         </TabControl>
