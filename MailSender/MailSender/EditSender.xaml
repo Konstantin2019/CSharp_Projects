@@ -49,7 +49,9 @@
                       Grid.Row="3" 
                       FontSize="16"
                       Margin="0,5,5,0"
-                      ItemsSource="{Binding Path=SelectedSender.Server}" DisplayMemberPath="Name"/>
+                      ItemsSource="{Binding Path=Servers}" DisplayMemberPath="Name"
+                      SelectedValuePath="Host"
+                      SelectedValue="{Binding Path=SelectedSender.Server.Host}"/>
             <StackPanel Grid.Column="0"
                         Grid.Row="4"
                         Grid.ColumnSpan="2"

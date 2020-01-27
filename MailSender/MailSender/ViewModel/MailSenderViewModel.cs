@@ -1,3 +1,4 @@
+using ExtentionLib;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
 using MailSender.ViewModel.WPFServices;
@@ -7,7 +8,6 @@ using MailSender_lib.Services;
 using MailSender_lib.Services.InMemory;
 using System;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
 
 namespace MailSender.ViewModel
@@ -215,8 +215,7 @@ namespace MailSender.ViewModel
                 if (success)
                 {
                     var items = senderProvider.GetAll();
-                    foreach (var item in items)
-                        Senders.Add(item);
+                    items.ToObservableCollection(Senders);
                 }
             }
 
@@ -226,8 +225,7 @@ namespace MailSender.ViewModel
                 if (success)
                 {
                     var items = serverProvider.GetAll();
-                    foreach (var item in items)
-                        Servers.Add(item);
+                    items.ToObservableCollection(Servers);
                 }
             }
 
@@ -237,8 +235,7 @@ namespace MailSender.ViewModel
                 if (success)
                 {
                     var items = recipientProvider.GetAll();
-                    foreach (var item in items)
-                        Recipients.Add(item);
+                    items.ToObservableCollection(Recipients);
                 }
             }
         }
@@ -340,7 +337,10 @@ namespace MailSender.ViewModel
 
         private void OnDeleteRecipientCommand()
         {
-            throw new NotImplementedException();
+            recipientProvider.Delete(SelectedRecipient.Id);
+            var success = recipientProvider.SaveChanges();
+            if (success)
+                Refresh(Recipients);
         }
 
         private void OnEditRecipientCommand()
@@ -358,7 +358,10 @@ namespace MailSender.ViewModel
 
         private void OnDeleteServerCommand()
         {
-            throw new NotImplementedException();
+            serverProvider.Delete(SelectedServer.Id);
+            var success = serverProvider.SaveChanges();
+            if (success)
+                Refresh(Servers);
         }
 
         private void OnEditSeverCommand()
@@ -376,7 +379,10 @@ namespace MailSender.ViewModel
 
         private void OnDeleteSenderCommand()
         {
-            throw new NotImplementedException();
+            senderProvider.Delete(SelectedSender.Id);
+            var success = senderProvider.SaveChanges();
+            if (success)
+                Refresh(Senders);
         }
 
         private void OnEditSenderCommand()

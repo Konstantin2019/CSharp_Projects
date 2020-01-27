@@ -49,7 +49,7 @@
                       Grid.Row="3" 
                       FontSize="16"
                       Margin="0,5,5,0"
-                      ItemsSource="{Binding Path=NewSender.Server}" DisplayMemberPath="Name"/>
+                      ItemsSource="{Binding Path=Servers}" DisplayMemberPath="Name"/>
             <StackPanel Grid.Column="0"
                         Grid.Row="4"
                         Grid.ColumnSpan="2"

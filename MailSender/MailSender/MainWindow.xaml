@@ -104,7 +104,7 @@
                                 </Button>
                                 <Button Height="25"
                                         ToolTip="Удалить"
-                                        Command="{Binding Path=DeleteSenderCommand}">
+                                        Command="{Binding Path=DeleteServerCommand}">
                                     <fa:ImageAwesome Icon="Ban" Foreground="Red"/>
                                 </Button>
                             </StackPanel>
