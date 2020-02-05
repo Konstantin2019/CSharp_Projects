@@ -8,12 +8,14 @@ using MailSender_lib.Services;
 using MailSender_lib.Services.InMemory;
 using System;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace MailSender.ViewModel
 {
     public class MailSenderViewModel : ViewModelBase
     {
+        #region variables
         private InMemorySenderProvider senderProvider;
         private InMemoryServerProvider serverProvider;
         private InMemoryRecipientProvider recipientProvider;
@@ -21,7 +23,6 @@ namespace MailSender.ViewModel
         private InMemoryShedulerProvider shedulerProvider;
         private MailSenderService emailService;
         private WindowsService windowsService;
-
         private string windowTitle = "Рассыльщик почты v1.0";
         private string filter;
         private bool allRecipients;
@@ -33,11 +34,16 @@ namespace MailSender.ViewModel
         private Recipient selectedRecipient;
         private string emailSubject;
         private string emailBody;
+        private Email newEmail;
         private Email selectedEmail;
         private ShedulerTask newShedulerTask;
         private ShedulerTask selectedShedulerTask;
         private string selectedTime;
+        private int tabIndex;
+        private DateTime selectedDate;
+        #endregion
 
+        #region Properties
         public string WindowTitle
         {
             get => windowTitle;
@@ -53,7 +59,11 @@ namespace MailSender.ViewModel
         public bool AllRecipients
         {
             get => allRecipients;
-            set => Set(ref allRecipients, value);
+            set
+            {
+                Set(ref allRecipients, value);
+                SelectedRecipient = null;
+            }
         }
 
         public Sender NewSender
@@ -128,12 +138,26 @@ namespace MailSender.ViewModel
             set => Set(ref selectedTime, value);
         }
 
+        public int TabIndex
+        {
+            get => tabIndex;
+            set => Set(ref tabIndex, value);
+        }
+
+        public DateTime SelectedDate
+        {
+            get => selectedDate;
+            set => Set(ref selectedDate, value);
+        }
+
         public ObservableCollection<Sender> Senders { get; private set; }
         public ObservableCollection<Server> Servers { get; private set; }
         public ObservableCollection<Recipient> Recipients { get; private set; }
         public ObservableCollection<Email> Emails { get; private set; }
         public ObservableCollection<ShedulerTask> ShedulerTasks { get; private set; }
+        #endregion
 
+        #region Commands
         public ICommand CreateSenderCommand { get; }
         public ICommand EditSenderCommand { get; }
         public ICommand DeleteSenderCommand { get; }
@@ -147,15 +171,18 @@ namespace MailSender.ViewModel
         public ICommand DeleteRecipientCommand { get; }
 
         public ICommand GoToShedulerCommand { get; }
-        public ICommand GoToEMailCommand { get; }
+        public ICommand PlanSendCommand { get; }
+        public ICommand DeleteTaskCommand { get; }
 
-        public ICommand PlanCommand { get; }
-        public ICommand SendCommand { get; }
-        public ICommand CreateEmailCommand { get; }
+        public ICommand FormEmailCommand { get; }
+        public ICommand GoToEmailCommand { get; }
+        public ICommand EditEmailCommand { get; }
+        public ICommand DeleteEmailCommand { get; }
 
         public ICommand AcceptCommand { get; }
         public ICommand AbortCommand { get; }
         public ICommand TotalRefreshCommand { get; }
+        #endregion
 
         public MailSenderViewModel(MailSenderService EmailService, WindowsService WindowsService)
         {
@@ -186,15 +213,76 @@ namespace MailSender.ViewModel
             DeleteRecipientCommand = new RelayCommand(OnDeleteRecipientCommand);
 
             GoToShedulerCommand = new RelayCommand(OnGoToShedulerCommand);
-            GoToEMailCommand = new RelayCommand(OnGoToEMailCommand);
 
-            PlanCommand = new RelayCommand(OnPlanCommand);
-            SendCommand = new RelayCommand(OnSendCommand);
-            CreateEmailCommand = new RelayCommand(OnCreateEmailCommand);
+            PlanSendCommand = new RelayCommand(OnPlanSendCommand);
+            DeleteTaskCommand = new RelayCommand(OnDeleteTaskCommand);
+
+            FormEmailCommand = new RelayCommand(OnFormEmailCommand);
+            GoToEmailCommand = new RelayCommand(OnGoToEmailCommand);
+            EditEmailCommand = new RelayCommand(OnEditEmailCommand);
+            DeleteEmailCommand = new RelayCommand(OnDeleteEmailCommand);
 
             AcceptCommand = new RelayCommand(OnAcceptCommand);
             AbortCommand = new RelayCommand(OnAbortCommand);
             TotalRefreshCommand = new RelayCommand(OnTotalRefreshCommand);
+        }
+
+        private TimeSpan CreateShedulerTask(Recipient recipient)
+        {
+            var delay = new TimeSpan();
+
+            NewShedulerTask = new ShedulerTask()
+            {
+                Sender = SelectedSender,
+                Recipient = recipient,
+                Email = SelectedEmail,
+            };
+
+            DateTime.TryParse(SelectedTime, out DateTime time);
+
+            if (SelectedDate != null && time != null)
+            {
+                NewShedulerTask.Time = SelectedDate.AddHours(time.Hour);
+                delay = NewShedulerTask.Time - DateTime.Now;
+                NewShedulerTask.Status = "Отправка запланирована на " + NewShedulerTask.Time.ToLongDateString() + " в " + SelectedTime;
+            }
+            else
+            {
+                NewShedulerTask.Time = DateTime.Now;
+                delay = NewShedulerTask.Time - DateTime.Now;
+                NewShedulerTask.Status = "Немедленная отправка...";
+            }
+
+            shedulerProvider.Create(NewShedulerTask);
+            var success = shedulerProvider.SaveChanges();
+            if (success)
+                Refresh(ShedulerTasks);
+
+            return delay;
+        }
+
+        private async Task SendAsync(ShedulerTask shedulerTask, TimeSpan delay)
+        {
+            await Task.Delay(delay);
+            var task = await emailService.SendAsync(shedulerTask.Sender, 
+                                                    shedulerTask.Recipient, 
+                                                    shedulerTask.Email);
+            if (task.Success)
+            {
+                shedulerTask.Status = "Успешно отправлено!";
+                shedulerProvider.Edit(shedulerTask.Id, shedulerTask);
+                var success = shedulerProvider.SaveChanges();
+                if (success)
+                    Refresh(ShedulerTasks);
+            }
+            else
+            {
+                shedulerTask.Status = task.Error;
+                shedulerProvider.Edit(shedulerTask.Id, shedulerTask);
+                var success = shedulerProvider.SaveChanges();
+                if (success)
+                    Refresh(ShedulerTasks);
+            }
         }
 
         private void Refresh<T>(ObservableCollection<T> collection) where T : BaseEntity
@@ -320,34 +408,88 @@ namespace MailSender.ViewModel
             WindowsService.InputDataWindow.Close();
         }
 
-        private void OnCreateEmailCommand()
+        private void OnFormEmailCommand()
         {
-            emailProvider.Create(new Email() {Subject = EmailSubject, Body = EmailBody });
-            EmailSubject = "";
-            EmailBody = "";
+            var success = false;
+
+            if (newEmail != null)
+            {
+                newEmail.Subject = EmailSubject;
+                newEmail.Body = EmailBody;
+                emailProvider.Create(newEmail);
+
+                EmailSubject = "";
+                EmailBody = "";
+                newEmail = null;
+
+                success = emailProvider.SaveChanges();
+            }
+            else
+            {
+                emailProvider.Edit(SelectedEmail.Id, SelectedEmail);
+                success = emailProvider.SaveChanges();
+            }
+            if (success)
+                Refresh(Emails);
+
+            TabIndex = 1;
+        }
+
+        private void OnDeleteEmailCommand()
+        {
+            emailProvider.Delete(SelectedEmail.Id);
             var success = emailProvider.SaveChanges();
             if (success)
                 Refresh(Emails);
         }
 
-        private void OnGoToEMailCommand()
+        private void OnEditEmailCommand()
         {
-            throw new NotImplementedException();
+            if (SelectedEmail != null)
+            {
+                TabIndex = 2;
+                EmailSubject = SelectedEmail.Subject;
+                EmailBody = SelectedEmail.Body;
+            }
         }
 
-        private void OnSendCommand()
+        private void OnGoToEmailCommand()
         {
-            throw new NotImplementedException();
-        }
-
-        private void OnPlanCommand()
-        {
-            throw new NotImplementedException();
+            TabIndex = 2;
+            newEmail = new Email();
+            EmailSubject = "";
+            EmailBody = "";
         }
 
         private void OnGoToShedulerCommand()
         {
-            throw new NotImplementedException();
+            TabIndex = 1;
+        }
+
+        private void OnDeleteTaskCommand()
+        {
+            shedulerProvider.Delete(SelectedShedulerTask.Id);
+            var success = shedulerProvider.SaveChanges();
+            if (success)
+                Refresh(ShedulerTasks);
+        }
+
+        private async void OnPlanSendCommand()
+        {
+            if (!AllRecipients)
+            {
+                var delay = CreateShedulerTask(SelectedRecipient);
+                await SendAsync(NewShedulerTask, delay);
+            }
+            else
+            {
+                //TODO Parallel FOREACH
+                foreach (var recip in Recipients)
+                {
+                    var delay = CreateShedulerTask(recip);
+                    await SendAsync(NewShedulerTask, delay);
+                }
+            }
         }
 
         private void OnDeleteRecipientCommand()

@@ -51,7 +51,7 @@
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
-        <TabControl>
+        <TabControl SelectedIndex="{Binding Path=TabIndex}">
             <TabItem Header="Рассылка"
                      FontSize="14">
                 <Grid>
@@ -182,25 +182,47 @@
                         <ColumnDefinition Width="75*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <Calendar/>
-                        <Button Height="25"
-                                Margin="8,4,8,0"
-                                ToolTip="Запланировать"
-                                Command="{Binding Path=PlanCommand}">
-                            <fa:ImageAwesome Icon="ClockOutline" Foreground="ForestGreen"/>
-                        </Button>
-                        <Button Height="25"
-                                Margin="8,4,8,0"
-                                ToolTip="Немедленно отправить"
-                                Command="{Binding Path=SendCommand}">
-                            <fa:ImageAwesome Icon="PaperPlane" Foreground="DarkBlue"/>
-                        </Button>
-                        <Button Height="25"
-                                Margin="8,4,8,0"
-                                ToolTip="Перейти в письма"
-                                Command="{Binding Path=GoToEMailCommand}">
-                            <fa:ImageAwesome Icon="EnvelopeOpen" Foreground="LightCoral"/>
-                        </Button>
+                        <Calendar SelectedDate="{Binding Path=SelectedDate}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50*"/>
+                                <ColumnDefinition Width="50*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <Button Height="25"
+                                        Margin="8,4,8,0"
+                                        ToolTip="Создать задание"
+                                        Command="{Binding Path=PlanSendCommand}">
+                                    <fa:ImageAwesome Icon="ClockOutline" Foreground="ForestGreen"/>
+                                </Button>
+                                <Button Height="25"
+                                        Margin="8,4,8,0"
+                                        ToolTip="Удалить задание"
+                                        Command="{Binding Path=DeleteTaskCommand}">
+                                    <fa:ImageAwesome Icon="Ban" Foreground="Red"/>
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <Button Height="25"
+                                        Margin="8,4,8,0"
+                                        ToolTip="Создать письмо"
+                                        Command="{Binding Path=GoToEmailCommand}">
+                                    <fa:ImageAwesome Icon="EnvelopeOpen" Foreground="ForestGreen"/>
+                                </Button>
+                                <Button Height="25"
+                                        Margin="8,4,8,0"
+                                        ToolTip="Редактировать письмо"
+                                        Command="{Binding Path=EditEmailCommand}">
+                                    <fa:ImageAwesome Icon="PencilSquareOutline" Foreground="DarkBlue"/>
+                                </Button>
+                                <Button Height="25"
+                                        Margin="8,4,8,0"
+                                        ToolTip="Удалить письмо"
+                                        Command="{Binding Path=DeleteEmailCommand}">
+                                    <fa:ImageAwesome Icon="Eraser" Foreground="Red"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <StackPanel Orientation="Horizontal"
@@ -221,11 +243,22 @@
                             <ComboBox MinWidth="430"
                                       DisplayMemberPath="Name"
                                       ItemsSource="{Binding Path=Recipients}"
-                                      SelectedItem="{Binding Path=SelectedRecipient}"/>
+                                      SelectedItem="{Binding Path=SelectedRecipient}">
+                                <ComboBox.Style>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=recips, Path=IsChecked}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
                             <TextBlock Text="Все"
                                        FontSize="16"
                                        Margin="5,0,5,0"/>
-                            <CheckBox VerticalAlignment="Center"
+                            <CheckBox Name="recips" 
+                                      VerticalAlignment="Center"
                                       IsChecked="{Binding Path=AllRecipients}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
@@ -261,10 +294,10 @@
                                   SelectedItem="{Binding Path=SelectedShedulerTask}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
-                                <DataGridTextColumn Header="Дата/Время" Binding="{Binding Time}"/>
-                                <DataGridTextColumn Header="Отправитель" Binding="{Binding Sender}"/>
-                                <DataGridTextColumn Header="Получатель" Binding="{Binding Recipient}"/>
-                                <DataGridTextColumn Header="Письмо" Binding="{Binding Email}" Width="*"/>
+                                <DataGridTextColumn Header="Отправитель" Binding="{Binding Sender.Name}"/>
+                                <DataGridTextColumn Header="Получатель" Binding="{Binding Recipient.Name}"/>
+                                <DataGridTextColumn Header="Письмо" Binding="{Binding Email.Subject}"/>
+                                <DataGridTextColumn Header="Состояние" Binding="{Binding Status}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -284,7 +317,7 @@
                                  Text="{Binding Path=EmailSubject, Mode=TwoWay}"/>
                         <Button Height="25"
                                 ToolTip="Сформировать письмо"
-                                Command="{Binding Path=CreateEmailCommand}">
+                                Command="{Binding Path=FormEmailCommand}">
                             <fa:ImageAwesome Icon="Envelope" Foreground="Red"/>
                         </Button>
                     </StackPanel>

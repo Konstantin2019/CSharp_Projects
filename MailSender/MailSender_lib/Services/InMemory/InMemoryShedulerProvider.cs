@@ -18,7 +18,6 @@ namespace MailSender_lib.Services.InMemory
             shedulerTask.Time = item.Time;
             shedulerTask.Sender = item.Sender;
             shedulerTask.Recipient = item.Recipient;
-            shedulerTask.Recipients = item.Recipients;
             shedulerTask.Email = item.Email;
         }
     }

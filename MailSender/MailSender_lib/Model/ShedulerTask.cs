@@ -10,10 +10,10 @@ namespace MailSender_lib.Model
 
         public Recipient Recipient { get; set; }
 
-        public List<Recipient> Recipients { get; set; }
-
         public Sender Sender { get; set; }
 
         public Email Email { get; set; }
+
+        public string Status { get; set; }
     }
 }
