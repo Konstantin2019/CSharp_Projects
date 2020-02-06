@@ -1,8 +1,10 @@
 ﻿using MailSender_lib.Model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MailSender_lib.Services
@@ -38,21 +40,25 @@ namespace MailSender_lib.Services
             }
         }
 
-        public async Task<IEnumerable<Response>> SendAsync(Sender sender, IEnumerable<Recipient> recipients, Email email)
+        public IEnumerable<Response> SendAsync(Sender sender, IEnumerable<Recipient> recipients, Email email)
         {
 
-            var responses = new List<Response>();
+            var responses = new ConcurrentQueue<Response>();
 
-            foreach (var recipient in recipients)
+            var options = new ParallelOptions()
             {
-                await Task.Run(
-                    async () => 
+                MaxDegreeOfParallelism = 8
+            };
+            Parallel.ForEach(recipients, options, recipient =>
+            {
+                Task.Run(async () =>
                     {
                         var response = await SendAsync(sender, recipient, email);
-                        responses.Add(response);
-                    });
-            }
-            return responses;
+                        responses.Enqueue(response);
+                    }).ConfigureAwait(false);
+            });
+
+            return responses.ToArray();
         }
     }
 }
