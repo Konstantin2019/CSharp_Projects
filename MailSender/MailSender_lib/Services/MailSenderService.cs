@@ -45,8 +45,12 @@ namespace MailSender_lib.Services
 
             foreach (var recipient in recipients)
             {
-                var response = await SendAsync(sender, recipient, email);
-                responses.Add(response);
+                await Task.Run(
+                    async () => 
+                    {
+                        var response = await SendAsync(sender, recipient, email);
+                        responses.Add(response);
+                    });
             }
             return responses;
         }

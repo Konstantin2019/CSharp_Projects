@@ -5,9 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
         xmlns:data="clr-namespace:MailSender_lib.Model;assembly=MailSender_lib"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         mc:Ignorable="d"
         Title="{Binding Path=WindowTitle}" Height="400" Width="800"
         DataContext="{Binding Path=MailSenderVM, Source={StaticResource Locator}}">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding Path=TotalRefreshCommand}"/>
+            <i:InvokeCommandAction Command="{Binding Path=ContinueTaskCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <DockPanel>
         <Menu DockPanel.Dock="Top"
               VerticalAlignment="Top"
@@ -150,11 +157,10 @@
                                     Margin="0,5,0,5">
                             <TextBlock Text="Фильтр : "
                                        FontSize="16"/>
-                            <TextBox MinWidth="640"
+                            <TextBox MinWidth="635"
                                      FontSize="16"
                                      Text="{Binding Path=Filter}"/>
-                            <Button Content="Обновить"
-                                    Command="{Binding Path=TotalRefreshCommand}"/>
+                            <Button Content="Применить"/>
                         </StackPanel>
                         <DataGrid Grid.Row="1"
                                   AutoGenerateColumns="False" 
