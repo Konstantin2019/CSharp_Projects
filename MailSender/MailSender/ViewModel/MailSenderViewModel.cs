@@ -7,12 +7,12 @@ using MailSender_lib.Model.Base;
 using MailSender_lib.Services;
 using MailSender_lib.Services.InMemory;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Threading;
+using System.Windows.Threading;
 
 namespace MailSender.ViewModel
 {
@@ -40,11 +40,18 @@ namespace MailSender.ViewModel
         private Email newEmail;
         private Email selectedEmail;
         private ShedulerTask selectedShedulerTask;
-        private ObservableCollection<ShedulerTask> shedulerTasks;
         private string selectedTime;
         private DateTime selectedDate;
         private int tabIndex;
-        private Dictionary<int, CancellationTokenSource> tokenSourceDict;
+        private Dictionary<int, TaskToken> tasks;
+        #endregion
+
+        #region Structs
+        struct TaskToken
+        {
+            public Task taskValue;
+            public CancellationTokenSource cts;
+        }
         #endregion
 
         #region Properties
@@ -152,15 +159,7 @@ namespace MailSender.ViewModel
         public ObservableCollection<Server> Servers { get; private set; }
         public ObservableCollection<Recipient> Recipients { get; private set; }
         public ObservableCollection<Email> Emails { get; private set; }
-        public ObservableCollection<ShedulerTask> ShedulerTasks
-        {
-            get => shedulerTasks;
-            private set
-            {
-                shedulerTasks = value;
-                InitializeShedulerTasks();
-            }
-        }
+        public ObservableCollection<ShedulerTask> ShedulerTasks { get; private set; }
         #endregion
 
         #region Commands
@@ -199,7 +198,7 @@ namespace MailSender.ViewModel
             recipientProvider = new InMemoryRecipientProvider("DataBase/Recipients.db");
             emailProvider = new InMemoryEmailProvider("DataBase/Emails.db");
             shedulerProvider = new InMemoryShedulerProvider("DataBase/ShedulerTasks.db");
-            tokenSourceDict = new Dictionary<int, CancellationTokenSource>();
+            tasks = new Dictionary<int, TaskToken>();
 
             Senders = new ObservableCollection<Sender>();
             Servers = new ObservableCollection<Server>();
@@ -297,11 +296,12 @@ namespace MailSender.ViewModel
         {
             if (ShedulerTasks != null && ShedulerTasks.Count > 0)
             {
-                var tasks = new List<Task>();
                 foreach (var shedulerTask in ShedulerTasks)
                 {
+                    if (tasks.ContainsKey(shedulerTask.Id))
+                        continue;
+
                     var abort = new CancellationTokenSource();
-                    tokenSourceDict.Add(shedulerTask.Id, abort);
                     var task = new Task(async () =>
                     {
                         var delay = shedulerTask.Time - DateTime.Now;
@@ -309,15 +309,16 @@ namespace MailSender.ViewModel
                             delay = TimeSpan.FromMinutes(0);
                         await SendTaskAsync(shedulerTask, delay);
                     }, abort.Token);
-                    tasks.Add(task);
+                    tasks.Add(shedulerTask.Id, new TaskToken() { taskValue = task, cts = abort });
                 }
+
                 var options = new ParallelOptions()
                 {
                     MaxDegreeOfParallelism = 8
                 };
                 Parallel.ForEach(tasks, options, task =>
                 {
-                    task.Start();
+                    task.Value.taskValue.Start();
                 });
             }
         }
@@ -373,7 +374,17 @@ namespace MailSender.ViewModel
                 if (success)
                 {
                     var items = shedulerProvider.GetAll();
-                    items.ToObservableCollection(ShedulerTasks);
+                    var dispatcher = WindowsService.MainWindow.Dispatcher;
+                    if (Thread.CurrentThread.ManagedThreadId != dispatcher.Thread.ManagedThreadId)
+                        dispatcher.BeginInvoke(DispatcherPriority.Normal,
+                                              (ThreadStart)delegate ()
+                                              {
+                                                  items.ToObservableCollection(ShedulerTasks);
+                                              });
+                    else
+                        items.ToObservableCollection(ShedulerTasks);
+
+                    InitializeShedulerTasks();
                 }
             }
         }
@@ -507,10 +518,11 @@ namespace MailSender.ViewModel
 
         private void OnDeleteTaskCommand()
         {
-            if (tokenSourceDict != null)
+            if (tasks != null)
             {
-                var abort = tokenSourceDict[SelectedShedulerTask.Id];
-                abort.Cancel();
+                var abort = tasks[SelectedShedulerTask.Id];
+                abort.cts.Cancel();
+                tasks.Remove(SelectedShedulerTask.Id);
             }
             shedulerProvider.Delete(SelectedShedulerTask.Id);
             var success = shedulerProvider.SaveChanges();

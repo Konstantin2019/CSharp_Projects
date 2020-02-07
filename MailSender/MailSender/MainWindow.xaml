@@ -156,7 +156,7 @@
                                     Margin="0,5,0,5">
                             <TextBlock Text="Фильтр : "
                                        FontSize="16"/>
-                            <TextBox MinWidth="635"
+                            <TextBox MinWidth="630"
                                      FontSize="16"
                                      Text="{Binding Path=Filter}"/>
                             <Button Content="Применить"/>
