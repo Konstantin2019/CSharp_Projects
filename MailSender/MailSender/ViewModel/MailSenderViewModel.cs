@@ -40,6 +40,7 @@ namespace MailSender.ViewModel
         private Email newEmail;
         private Email selectedEmail;
         private ShedulerTask selectedShedulerTask;
+        private ObservableCollection<ShedulerTask> shedulerTasks;
         private string selectedTime;
         private DateTime selectedDate;
         private int tabIndex;
@@ -151,7 +152,15 @@ namespace MailSender.ViewModel
         public ObservableCollection<Server> Servers { get; private set; }
         public ObservableCollection<Recipient> Recipients { get; private set; }
         public ObservableCollection<Email> Emails { get; private set; }
-        public ObservableCollection<ShedulerTask> ShedulerTasks { get; private set; }
+        public ObservableCollection<ShedulerTask> ShedulerTasks
+        {
+            get => shedulerTasks;
+            private set
+            {
+                shedulerTasks = value;
+                InitializeShedulerTasks();
+            }
+        }
         #endregion
 
         #region Commands
@@ -179,7 +188,6 @@ namespace MailSender.ViewModel
         public ICommand AcceptCommand { get; }
         public ICommand AbortCommand { get; }
         public ICommand TotalRefreshCommand { get; }
-        public ICommand ContinueTaskCommand { get; }
         #endregion
 
         public MailSenderViewModel(MailSenderService EmailService, WindowsService WindowsService)
@@ -224,13 +232,10 @@ namespace MailSender.ViewModel
             AcceptCommand = new RelayCommand(OnAcceptCommand);
             AbortCommand = new RelayCommand(OnAbortCommand);
             TotalRefreshCommand = new RelayCommand(OnTotalRefreshCommand);
-            ContinueTaskCommand = new RelayCommand(OnContinueTaskCommand);
         }
 
-        private ShedulerTask CreateShedulerTask(Recipient recipient, out TimeSpan delay)
+        private void CreateShedulerTask(Recipient recipient)
         {
-            delay = new TimeSpan();
-
             var shedulerTask = new ShedulerTask()
             {
                 Sender = SelectedSender,
@@ -239,7 +244,7 @@ namespace MailSender.ViewModel
             };
 
             if (shedulerTask.Sender == null || shedulerTask.Recipient == null || shedulerTask.Email == null)
-                return null;
+                return;
 
             DateTime.TryParse(SelectedTime, out DateTime time);
 
@@ -247,14 +252,12 @@ namespace MailSender.ViewModel
                 shedulerTask.Time = SelectedDate.AddHours(time.Hour);
 
             if (shedulerTask.Time != null && shedulerTask.Time > DateTime.Now)
-            {
-                delay = shedulerTask.Time - DateTime.Now;
-                shedulerTask.Status = "Отправка запланирована на " + shedulerTask.Time.ToLongDateString() + " в " + SelectedTime;
-            }
+                shedulerTask.Status = "Отправка запланирована на " 
+                                      + shedulerTask.Time.ToLongDateString() 
+                                      + " в " + SelectedTime;
             else
             {
                 shedulerTask.Time = DateTime.Now;
-                delay = shedulerTask.Time - DateTime.Now;
                 shedulerTask.Status = "Немедленная отправка...";
             }
 
@@ -262,11 +265,9 @@ namespace MailSender.ViewModel
             var success = shedulerProvider.SaveChanges();
             if (success)
                 Refresh(ShedulerTasks);
-
-            return shedulerTask;
         }
 
-        private async Task SendAsync(ShedulerTask shedulerTask, TimeSpan delay)
+        private async Task SendTaskAsync(ShedulerTask shedulerTask, TimeSpan delay)
         {
             if (shedulerTask == null) return;
 
@@ -292,41 +293,32 @@ namespace MailSender.ViewModel
             }
         }
 
-        private async Task SendAsync(IEnumerable<ShedulerTask> shedulerTasks, TimeSpan delay)
+        private void InitializeShedulerTasks()
         {
-            if (shedulerTasks == null) return;
-
-            var sender = shedulerTasks.Select(t => t.Sender).FirstOrDefault();
-            var email = shedulerTasks.Select(t => t.Email).FirstOrDefault();
-            var recipients = shedulerTasks.Select(t => t.Recipient).ToArray();
-            var tasks = shedulerTasks.ToArray();
-
-            if (sender == null || recipients == null || email == null ) return;
-
-            await Task.Delay(delay);
-            var responses = emailService.SendAsync(sender, recipients, email);
-
-            var idx = 0;
-            foreach (var response in responses)
+            if (ShedulerTasks != null && ShedulerTasks.Count > 0)
             {
-                var inner_idx = idx;
-                if (response.Success)
+                var tasks = new List<Task>();
+                foreach (var shedulerTask in ShedulerTasks)
                 {
-                    tasks[inner_idx].Status = "Успешно отправлено!";
-                    shedulerProvider.Edit(tasks[inner_idx].Id, tasks[inner_idx]);
-                    var success = shedulerProvider.SaveChanges();
-                    if (success)
-                        Refresh(ShedulerTasks);
+                    var abort = new CancellationTokenSource();
+                    tokenSourceDict.Add(shedulerTask.Id, abort);
+                    var task = new Task(async () =>
+                    {
+                        var delay = shedulerTask.Time - DateTime.Now;
+                        if (delay.TotalMinutes < 0)
+                            delay = TimeSpan.FromMinutes(0);
+                        await SendTaskAsync(shedulerTask, delay);
+                    }, abort.Token);
+                    tasks.Add(task);
                 }
-                else
+                var options = new ParallelOptions()
                 {
-                    tasks[inner_idx].Status = response.Error;
-                    shedulerProvider.Edit(tasks[inner_idx].Id, tasks[inner_idx]);
-                    var success = shedulerProvider.SaveChanges();
-                    if (success)
-                        Refresh(ShedulerTasks);
-                }
-                idx++;
+                    MaxDegreeOfParallelism = 8
+                };
+                Parallel.ForEach(tasks, options, task =>
+                {
+                    task.Start();
+                });
             }
         }
 
@@ -383,35 +375,6 @@ namespace MailSender.ViewModel
                     var items = shedulerProvider.GetAll();
                     items.ToObservableCollection(ShedulerTasks);
                 }
-            }
-        }
-
-        private void OnContinueTaskCommand()
-        {
-            if (ShedulerTasks != null)
-            {
-                var tasks = new List<Task>();
-                foreach (var shedulerTask in ShedulerTasks)
-                {
-                    var abort = new CancellationTokenSource();
-                    tokenSourceDict.Add(shedulerTask.Id, abort);
-                    var task = new Task(async () =>
-                    {
-                        var delay = shedulerTask.Time - DateTime.Now;
-                        if (delay.TotalMinutes < 0)
-                            delay = TimeSpan.FromMinutes(0);
-                        await SendAsync(shedulerTask, delay);
-                    }, abort.Token);
-                    tasks.Add(task);
-                }
-                var options = new ParallelOptions()
-                {
-                    MaxDegreeOfParallelism = 8
-                };
-                Parallel.ForEach(tasks, options, task =>
-                {
-                    task.Start();
-                });
             }
         }
 
@@ -555,29 +518,19 @@ namespace MailSender.ViewModel
                 Refresh(ShedulerTasks);
         }
 
-        private async void OnPlanSendCommand()
+        private void OnPlanSendCommand()
         {
             if (!AllRecipients)
             {
                 if (SelectedRecipient == null) return;
-
-                var shedulerTask = CreateShedulerTask(SelectedRecipient, out TimeSpan delay);
-                await SendAsync(shedulerTask, delay);
+                CreateShedulerTask(SelectedRecipient);
             }
             else
             {
                 if (Recipients == null) return;
 
-                var shedulerTasks = new List<ShedulerTask>();
-                var delay = new TimeSpan();
-
                 foreach (var recip in Recipients)
-                {
-                    var task = CreateShedulerTask(recip, out delay);
-                    shedulerTasks.Add(task);
-                }
-
-                await SendAsync(shedulerTasks, delay);
+                    CreateShedulerTask(recip);
             }
         }
 

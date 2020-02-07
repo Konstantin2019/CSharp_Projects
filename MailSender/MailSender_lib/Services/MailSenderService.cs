@@ -40,25 +40,18 @@ namespace MailSender_lib.Services
             }
         }
 
-        public IEnumerable<Response> SendAsync(Sender sender, IEnumerable<Recipient> recipients, Email email)
+        public async Task<IEnumerable<Response>> SendAsync(Sender sender, IEnumerable<Recipient> recipients, Email email)
         {
 
-            var responses = new ConcurrentQueue<Response>();
+            var responses = new List<Response>();
 
-            var options = new ParallelOptions()
+            foreach (var recipient in recipients)
             {
-                MaxDegreeOfParallelism = 8
-            };
-            Parallel.ForEach(recipients, options, recipient =>
-            {
-                Task.Run(async () =>
-                    {
-                        var response = await SendAsync(sender, recipient, email);
-                        responses.Enqueue(response);
-                    }).ConfigureAwait(false);
-            });
+                var response = await SendAsync(sender, recipient, email);
+                responses.Add(response);
+            }
 
-            return responses.ToArray();
+            return responses;
         }
     }
 }
