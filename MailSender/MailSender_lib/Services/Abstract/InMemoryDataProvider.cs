@@ -37,6 +37,9 @@ namespace MailSender_lib.Services.Abstract
             try
             {
                 var jsonString = JsonConvert.SerializeObject(items);
+                var dir = Path.GetDirectoryName(path);
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
                 File.WriteAllText(path, jsonString);
                 return true;
             }

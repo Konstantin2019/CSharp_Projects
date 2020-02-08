@@ -12,6 +12,7 @@
     <i:Interaction.Triggers>
         <i:EventTrigger EventName="Loaded">
             <i:InvokeCommandAction Command="{Binding Path=TotalRefreshCommand}"/>
+            <i:InvokeCommandAction Command="{Binding Path=InitializeShedulerTasksCommand}"/>
         </i:EventTrigger>
     </i:Interaction.Triggers>
     <DockPanel>
