@@ -7,6 +7,7 @@ using MailSender_lib.Model.Base;
 using MailSender_lib.Services;
 using MailSender_lib.Services.InMemory;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -44,6 +45,7 @@ namespace MailSender.ViewModel
         private DateTime selectedDate;
         private int tabIndex;
         private Dictionary<int, TaskToken> tasks;
+        private event Action recipientsFiltrationEvent;
         #endregion
 
         #region Structs
@@ -64,7 +66,11 @@ namespace MailSender.ViewModel
         public string Filter
         {
             get => filter;
-            set => Set(ref filter, value);
+            set
+            {
+                Set(ref filter, value);
+                recipientsFiltrationEvent?.Invoke();
+            }
         }
 
         public bool AllRecipients
@@ -188,6 +194,7 @@ namespace MailSender.ViewModel
         public ICommand AbortCommand { get; }
         public ICommand TotalRefreshCommand { get; }
         public ICommand InitializeShedulerTasksCommand { get; }
+        public ICommand DeleteNotActualTasks { get; }
         #endregion
 
         public MailSenderViewModel(MailSenderService EmailService, WindowsService WindowsService)
@@ -233,8 +240,12 @@ namespace MailSender.ViewModel
             AbortCommand = new RelayCommand(OnAbortCommand);
             TotalRefreshCommand = new RelayCommand(OnTotalRefreshCommand);
             InitializeShedulerTasksCommand = new RelayCommand(OnInitializeShedulerTasksCommand);
+            DeleteNotActualTasks = new RelayCommand(OnDeleteNotActualTasks);
+
+            recipientsFiltrationEvent += FiltrateRecipients;
         }
 
+        #region ShedulerTasksWrapperMethods
         private void CreateShedulerTask(Recipient recipient)
         {
             var shedulerTask = new ShedulerTask()
@@ -253,8 +264,8 @@ namespace MailSender.ViewModel
                 shedulerTask.Time = SelectedDate.AddHours(time.Hour);
 
             if (shedulerTask.Time != null && shedulerTask.Time > DateTime.Now)
-                shedulerTask.Status = "Отправка запланирована на " 
-                                      + shedulerTask.Time.ToLongDateString() 
+                shedulerTask.Status = "Отправка запланирована на "
+                                      + shedulerTask.Time.ToLongDateString()
                                       + " в " + SelectedTime;
             else
             {
@@ -268,32 +279,38 @@ namespace MailSender.ViewModel
                 Refresh(ShedulerTasks);
         }
 
-        private async Task<Response> SendTaskAsync(ShedulerTask shedulerTask, TimeSpan delay)
+        private bool DeleteShedulerTask(ShedulerTask shedulerTask)
         {
-            if (shedulerTask == null) return new Response { Success = false, Error = "Список задач пуст" };
+            if (shedulerTask != null)
+            {
+                if (tasks != null && tasks.ContainsKey(shedulerTask.Id))
+                {
+                    var abort = tasks[shedulerTask.Id];
+                    if (abort.cts != null)
+                        abort.cts.Cancel();
+                    tasks.Remove(shedulerTask.Id);
+                }
 
-            await Task.Delay(delay);
-            var response =  await emailService.SendAsync(shedulerTask.Sender, 
-                                                         shedulerTask.Recipient, 
-                                                         shedulerTask.Email);
-            return response;
+                shedulerProvider.Delete(shedulerTask.Id);
+                var success = shedulerProvider.SaveChanges();
+                if (success)
+                    Refresh(ShedulerTasks);
+                return true;
+            }
+            else
+                return false;
         }
 
-        private void OnInitializeShedulerTasksCommand()
+        private void InitShedulerTasks()
         {
             if (ShedulerTasks != null && ShedulerTasks.Count > 0)
             {
                 foreach (var shedulerTask in ShedulerTasks)
                 {
-                    if (tasks.ContainsKey(shedulerTask.Id))
+                    if (tasks.ContainsKey(shedulerTask.Id)
+                     ||(!shedulerTask.Status.StartsWith("Отправка запланирована") 
+                     && !shedulerTask.Status.StartsWith("Немедленная отправка")))
                         continue;
-
-                    if (!shedulerTask.Status.StartsWith("Отправка запланирована") 
-                     && !shedulerTask.Status.StartsWith("Немедленная отправка"))
-                    {
-                        tasks.Add(shedulerTask.Id, new TaskToken() { taskValue = null, cts = null });
-                        continue;
-                    }
 
                     var abort = new CancellationTokenSource();
                     var task = new Task(async () =>
@@ -332,6 +349,18 @@ namespace MailSender.ViewModel
                 });
             }
         }
+
+        private async Task<Response> SendTaskAsync(ShedulerTask shedulerTask, TimeSpan delay)
+        {
+            if (shedulerTask == null) return new Response { Success = false, Error = "Список задач пуст" };
+
+            await Task.Delay(delay);
+            var response = await emailService.SendAsync(shedulerTask.Sender,
+                                                         shedulerTask.Recipient,
+                                                         shedulerTask.Email);
+            return response;
+        }
+        #endregion
 
         private void Refresh<T>(ObservableCollection<T> collection) where T : BaseEntity
         {
@@ -394,6 +423,41 @@ namespace MailSender.ViewModel
             }
         }
 
+        private void FiltrateRecipients()
+        {
+            Refresh(Recipients);
+
+            if (Recipients != null)
+            {
+                var recips = Recipients.Where(r => r.Name.StartsWith(Filter)).ToArray();
+                if (recips != null && recips.Length > 0)
+                {
+                    Recipients.Clear();
+                    foreach (var recip in recips)
+                        Recipients.Add(recip);
+                }
+            }
+        }
+
+        #region OnMethods
+        private void OnDeleteNotActualTasks()
+        {
+            for (int i = 0; i < ShedulerTasks.Count; i++)
+            {
+                if (!ShedulerTasks[i].Status.StartsWith("Отправка запланирована")
+                 && !ShedulerTasks[i].Status.StartsWith("Немедленная отправка"))
+                {
+                    var success = DeleteShedulerTask(ShedulerTasks[i]);
+                    if (success) i--;
+                }
+            }
+        }
+
+        private void OnInitializeShedulerTasksCommand()
+        {
+            InitShedulerTasks();
+        }
+
         private void OnTotalRefreshCommand()
         {
             Refresh(Senders);
@@ -447,7 +511,10 @@ namespace MailSender.ViewModel
                 recipientProvider.Create(NewRecipient);
                 var success = recipientProvider.SaveChanges();
                 if (success)
+                {
                     Refresh(Recipients);
+                    Filter = "";
+                }
             }
 
             if (WindowsService.InputDataWindow is EditRecipient)
@@ -455,7 +522,12 @@ namespace MailSender.ViewModel
                 recipientProvider.Edit(SelectedRecipient.Id, SelectedRecipient);
                 var success = recipientProvider.SaveChanges();
                 if (success)
-                    Refresh(Recipients);
+                {
+                    if (Filter != null && Filter.Length > 0)
+                        FiltrateRecipients();
+                    else
+                        Refresh(Recipients);
+                }
             }
 
             WindowsService.InputDataWindow.Close();
@@ -492,12 +564,13 @@ namespace MailSender.ViewModel
 
         private void OnDeleteEmailCommand()
         {
-            if (SelectedEmail == null) return;
-
-            emailProvider.Delete(SelectedEmail.Id);
-            var success = emailProvider.SaveChanges();
-            if (success)
-                Refresh(Emails);
+            if (SelectedEmail != null)
+            {
+                emailProvider.Delete(SelectedEmail.Id);
+                var success = emailProvider.SaveChanges();
+                if (success)
+                    Refresh(Emails);
+            }
         }
 
         private void OnEditEmailCommand()
@@ -525,19 +598,7 @@ namespace MailSender.ViewModel
 
         private void OnDeleteTaskCommand()
         {
-            if (SelectedShedulerTask == null) return;
-
-            if (tasks != null && tasks.ContainsKey(SelectedShedulerTask.Id))
-            {
-                var abort = tasks[SelectedShedulerTask.Id];
-                if (abort.cts != null)
-                    abort.cts.Cancel();
-                tasks.Remove(SelectedShedulerTask.Id);
-                shedulerProvider.Delete(SelectedShedulerTask.Id);
-                var success = shedulerProvider.SaveChanges();
-                if (success)
-                    Refresh(ShedulerTasks);
-            }
+            DeleteShedulerTask(SelectedShedulerTask);
         }
 
         private void OnPlanSendCommand()
@@ -555,17 +616,23 @@ namespace MailSender.ViewModel
                     CreateShedulerTask(recip);
             }
 
-            OnInitializeShedulerTasksCommand();
+            InitShedulerTasks();
         }
 
         private void OnDeleteRecipientCommand()
         {
-            if (SelectedRecipient == null) return;
-
-            recipientProvider.Delete(SelectedRecipient.Id);
-            var success = recipientProvider.SaveChanges();
-            if (success)
-                Refresh(Recipients);
+            if (SelectedRecipient != null)
+            {
+                recipientProvider.Delete(SelectedRecipient.Id);
+                var success = recipientProvider.SaveChanges();
+                if (success)
+                {
+                    if (Filter != null && Filter.Length > 0)
+                        FiltrateRecipients();
+                    else
+                        Refresh(Recipients);
+                }
+            }
         }
 
         private void OnEditRecipientCommand()
@@ -583,12 +650,13 @@ namespace MailSender.ViewModel
 
         private void OnDeleteServerCommand()
         {
-            if (SelectedServer == null) return;
-
-            serverProvider.Delete(SelectedServer.Id);
-            var success = serverProvider.SaveChanges();
-            if (success)
-                Refresh(Servers);
+            if (SelectedServer != null)
+            {
+                serverProvider.Delete(SelectedServer.Id);
+                var success = serverProvider.SaveChanges();
+                if (success)
+                    Refresh(Servers);
+            }
         }
 
         private void OnEditSeverCommand()
@@ -606,12 +674,13 @@ namespace MailSender.ViewModel
 
         private void OnDeleteSenderCommand()
         {
-            if (SelectedSender == null) return;
-
-            senderProvider.Delete(SelectedSender.Id);
-            var success = senderProvider.SaveChanges();
-            if (success)
-                Refresh(Senders);
+            if (SelectedSender != null)
+            {
+                senderProvider.Delete(SelectedSender.Id);
+                var success = senderProvider.SaveChanges();
+                if (success)
+                    Refresh(Senders);
+            }
         }
 
         private void OnEditSenderCommand()
@@ -626,5 +695,6 @@ namespace MailSender.ViewModel
             var window = windowsService.CreateWindow<AddSender>();
             window.ShowDialog();
         }
+        #endregion
     }
 }

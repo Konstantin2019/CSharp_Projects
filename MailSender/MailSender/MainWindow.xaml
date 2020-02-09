@@ -63,12 +63,13 @@
                      FontSize="14">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="25*"/>
-                        <RowDefinition Height="75*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <ToolBarTray HorizontalAlignment="Center"
-                                 VerticalAlignment="Center">
-                        <ToolBar MinWidth="385">
+                                 VerticalAlignment="Center"
+                                 Margin="0,5,0,0">
+                        <ToolBar>
                             <StackPanel Orientation="Horizontal">
                                 <ComboBox MinWidth="280"
                                           ToolTip="Отправители"
@@ -92,7 +93,7 @@
                                 </Button>
                             </StackPanel>
                         </ToolBar>
-                        <ToolBar MinWidth="385">
+                        <ToolBar>
                             <StackPanel Orientation="Horizontal">
                                 <ComboBox MinWidth="280"
                                           ToolTip="Серверы"
@@ -116,8 +117,7 @@
                                 </Button>
                             </StackPanel>
                         </ToolBar>
-                        <ToolBar MinWidth="385"
-                                 Band="1">
+                        <ToolBar Band="1">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock MinWidth="280"
                                            Text="Получатели"
@@ -139,11 +139,10 @@
                                 </Button>
                             </StackPanel>
                         </ToolBar>
-                        <ToolBar MinWidth="385"
-                                 Band="1">
+                        <ToolBar Band="1">
                             <TextBlock MinWidth="280"
-                                           Text="Планировщик"
-                                           TextAlignment="Center"/>
+                                       Text="Планировщик"
+                                       TextAlignment="Center"/>
                             <Button Height="25"
                                     ToolTip="Перейти в планировщик"
                                     Command="{Binding Path=GoToShedulerCommand}">
@@ -152,31 +151,30 @@
                         </ToolBar>
                     </ToolBarTray>
                     <StackPanel Grid.Row="1">
-                        <StackPanel Grid.Row="1"
-                                Orientation="Horizontal"
-                                    Margin="0,5,0,5">
-                            <TextBlock Text="Фильтр : "
+                        <DockPanel Grid.Row="1"
+                                   Margin="0,5,0,5">
+                            <TextBlock DockPanel.Dock="Left"
+                                       Text="Фильтр : "
                                        FontSize="16"/>
-                            <TextBox MinWidth="630"
-                                     FontSize="16"
-                                     Text="{Binding Path=Filter}"/>
-                            <Button Content="Применить"/>
-                        </StackPanel>
-                        <DataGrid Grid.Row="1"
+                            <TextBox FontSize="16"
+                                     Text="{Binding Path=Filter, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DockPanel>
+                        <ScrollViewer CanContentScroll="True">
+                            <DataGrid Grid.Row="1"
                                   AutoGenerateColumns="False" 
                                   GridLinesVisibility="Vertical"
                                   AlternatingRowBackground="Azure"
                                   IsReadOnly="True"
-                                  MinHeight="170"
                                   ItemsSource="{Binding Path=Recipients}"
                                   SelectedItem="{Binding Path=SelectedRecipient}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
-                                <DataGridTextColumn Header="Имя" Binding="{Binding Name}"/>
-                                <DataGridTextColumn Header="Адрес" Binding="{Binding Address}"/>
-                                <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
+                                    <DataGridTextColumn Header="Имя" Binding="{Binding Name}"/>
+                                    <DataGridTextColumn Header="Адрес" Binding="{Binding Address}"/>
+                                    <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </ScrollViewer>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -232,7 +230,8 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <StackPanel Orientation="Horizontal"
-                                    Margin="0,5,0,0">
+                                    Margin="0,5,0,0"
+                                    HorizontalAlignment="Center">
                             <TextBlock Text="Отправитель"
                                        FontSize="16"
                                        MinWidth="100"/>
@@ -242,7 +241,8 @@
                                       SelectedItem="{Binding Path=SelectedSender}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
-                                    Margin="0,5,0,0">
+                                    Margin="0,5,0,0"
+                                    HorizontalAlignment="Center">
                             <TextBlock Text="Получатель"
                                        FontSize="16"
                                        MinWidth="100"/>
@@ -268,7 +268,8 @@
                                       IsChecked="{Binding Path=AllRecipients}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
-                                    Margin="0,5,0,0">
+                                    Margin="0,5,0,0"
+                                    HorizontalAlignment="Center">
                             <TextBlock Text="Письмо"
                                        FontSize="16"
                                        MinWidth="100"/>
@@ -278,7 +279,8 @@
                                       SelectedItem="{Binding Path=SelectedEmail}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
-                                    Margin="0,5,0,0">
+                                    Margin="0,5,0,0"
+                                    HorizontalAlignment="Center">
                             <TextBlock Text="Время"
                                        FontSize="16"
                                        MinWidth="100"/>
@@ -290,29 +292,43 @@
                                    FontStyle="Italic"
                                    FontSize="16"
                                    TextAlignment="Center"/>
-                        <DataGrid Grid.Row="1"
+                        <Button Content="Удалить неактуальные задачи"
+                                FontSize="16"
+                                Margin="0,5,0,5"
+                                Width="250"
+                                HorizontalAlignment="Center"
+                                Command="{Binding Path=DeleteNotActualTasks}"/>
+                        <ScrollViewer CanContentScroll="True">
+                            <DataGrid Grid.Row="1"
                                   AutoGenerateColumns="False" 
                                   GridLinesVisibility="Vertical"
                                   AlternatingRowBackground="Azure"
                                   IsReadOnly="True"
-                                  MinHeight="130"
                                   ItemsSource="{Binding Path=ShedulerTasks}"
                                   SelectedItem="{Binding Path=SelectedShedulerTask}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
-                                <DataGridTextColumn Header="Отправитель" Binding="{Binding Sender.Name}"/>
-                                <DataGridTextColumn Header="Получатель" Binding="{Binding Recipient.Name}"/>
-                                <DataGridTextColumn Header="Письмо" Binding="{Binding Email.Subject}"/>
-                                <DataGridTextColumn Header="Состояние" Binding="{Binding Status}" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
+                                    <DataGridTextColumn Header="Отправитель" Binding="{Binding Sender.Name}"/>
+                                    <DataGridTextColumn Header="Получатель" Binding="{Binding Recipient.Name}"/>
+                                    <DataGridTextColumn Header="Письмо" Binding="{Binding Email.Subject}"/>
+                                    <DataGridTextColumn Header="Состояние" Binding="{Binding Status}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </ScrollViewer>
                     </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="Письмо"
                      FontSize="14">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left"
+                                Height="25"
+                                Margin="5,0,5,0"
+                                ToolTip="Сформировать письмо"
+                                Command="{Binding Path=FormEmailCommand}">
+                            <fa:ImageAwesome Icon="Envelope" Foreground="Red"/>
+                        </Button>
                         <TextBlock Text="Заголовок : "
                                    FontSize="16"
                                    VerticalAlignment="Center"/>
@@ -321,12 +337,7 @@
                                  VerticalAlignment="Center"
                                  Margin="5"
                                  Text="{Binding Path=EmailSubject, Mode=TwoWay}"/>
-                        <Button Height="25"
-                                ToolTip="Сформировать письмо"
-                                Command="{Binding Path=FormEmailCommand}">
-                            <fa:ImageAwesome Icon="Envelope" Foreground="Red"/>
-                        </Button>
-                    </StackPanel>
+                    </DockPanel>
                     <TextBox MinHeight="230"
                              Margin="5"
                              FontSize="16"
