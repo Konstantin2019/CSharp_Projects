@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Threading;
 using System.Windows.Threading;
+using MailSender_lib.Services.Abstract;
 
 namespace MailSender.ViewModel
 {
@@ -45,7 +46,10 @@ namespace MailSender.ViewModel
         private DateTime selectedDate;
         private int tabIndex;
         private Dictionary<int, TaskToken> tasks;
-        private event Action recipientsFiltrationEvent;
+        #endregion
+
+        #region Events
+        private event Action RecipientsFiltrationEvent;
         #endregion
 
         #region Structs
@@ -69,7 +73,7 @@ namespace MailSender.ViewModel
             set
             {
                 Set(ref filter, value);
-                recipientsFiltrationEvent?.Invoke();
+                RecipientsFiltrationEvent?.Invoke();
             }
         }
 
@@ -242,7 +246,7 @@ namespace MailSender.ViewModel
             InitializeShedulerTasksCommand = new RelayCommand(OnInitializeShedulerTasksCommand);
             DeleteNotActualTasks = new RelayCommand(OnDeleteNotActualTasks);
 
-            recipientsFiltrationEvent += FiltrateRecipients;
+            RecipientsFiltrationEvent += FiltrateRecipients;
         }
 
         #region ShedulerTasksWrapperMethods
@@ -433,8 +437,7 @@ namespace MailSender.ViewModel
                 if (recips != null && recips.Length > 0)
                 {
                     Recipients.Clear();
-                    foreach (var recip in recips)
-                        Recipients.Add(recip);
+                    recips.ToObservableCollection(Recipients);
                 }
             }
         }

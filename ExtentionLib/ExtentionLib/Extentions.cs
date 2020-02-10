@@ -12,14 +12,34 @@ namespace ExtentionLib
     {
         public static void ToObservableCollection<T>(this IEnumerable<T> collection, ObservableCollection<T> observables)
         {
+            if (observables == null)
+                observables = new ObservableCollection<T>();
             foreach (var item in collection)
                 observables.Add(item);
         }
 
-        public static void ToObservableCollection<T>(this ICollection<T> collection, ObservableCollection<T> observables)
+        public static ObservableCollection<T> ToObservableCollection<T>(this IEnumerable<T> collection)
         {
+            var observables = new ObservableCollection<T>();
             foreach (var item in collection)
                 observables.Add(item);
+            return observables;
+        }
+
+        public static void ToObservableCollection<T>(this ICollection<T> collection, ObservableCollection<T> observables)
+        {
+            if (observables == null)
+                observables = new ObservableCollection<T>();
+            foreach (var item in collection)
+                observables.Add(item);
+        }
+
+        public static ObservableCollection<T> ToObservableCollection<T>(this ICollection<T> collection)
+        {
+            var observables = new ObservableCollection<T>();
+            foreach (var item in collection)
+                observables.Add(item);
+            return observables;
         }
     }
     /// <summary>
