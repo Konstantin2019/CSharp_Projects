@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Threading;
 using System.Windows.Threading;
-using MailSender_lib.Services.Abstract;
 
 namespace MailSender.ViewModel
 {
@@ -49,14 +48,19 @@ namespace MailSender.ViewModel
         #endregion
 
         #region Events
-        private event Action RecipientsFiltrationEvent;
+        private event Action<ObservableCollection<Recipient>> RecipientsFiltrationEvent;
         #endregion
 
-        #region Structs
+        #region Structs and Enums
         struct TaskToken
         {
             public Task taskValue;
             public CancellationTokenSource cts;
+        }
+
+        enum ItemStatus
+        {
+            Create, Edit, Delete
         }
         #endregion
 
@@ -73,7 +77,7 @@ namespace MailSender.ViewModel
             set
             {
                 Set(ref filter, value);
-                RecipientsFiltrationEvent?.Invoke();
+                RecipientsFiltrationEvent?.Invoke(Recipients);
             }
         }
 
@@ -366,78 +370,97 @@ namespace MailSender.ViewModel
         }
         #endregion
 
+        #region CommonMethods
+        private void RenewCollection<T>(dynamic provider, ObservableCollection<T> collection)
+            where T : BaseEntity
+        {
+            var success = provider.ReadData();
+            if (success)
+            {
+                var items = provider.GetAll();
+                if (items != null)
+                    foreach (var item in items)
+                        collection.Add(item);
+            }
+        }
+
         private void Refresh<T>(ObservableCollection<T> collection) where T : BaseEntity
         {
             if (collection != null && collection.Count > 0)
                 collection.Clear();
 
             if (collection is ObservableCollection<Sender>)
-            {
-                var success = senderProvider.ReadData();
-                if (success)
-                {
-                    var items = senderProvider.GetAll();
-                    if (items != null)
-                        items.ToObservableCollection(Senders);
-                }
-            }
+                RenewCollection(senderProvider, collection);
 
             if (collection is ObservableCollection<Server>)
-            {
-                var success = serverProvider.ReadData();
-                if (success)
-                {
-                    var items = serverProvider.GetAll();
-                    if (items != null)
-                        items.ToObservableCollection(Servers);
-                }
-            }
+                RenewCollection(serverProvider, collection);
 
             if (collection is ObservableCollection<Recipient>)
-            {
-                var success = recipientProvider.ReadData();
-                if (success)
-                {
-                    var items = recipientProvider.GetAll();
-                    if (items != null)
-                        items.ToObservableCollection(Recipients);
-                }
-            }
+                RenewCollection(recipientProvider, collection);
 
             if (collection is ObservableCollection<Email>)
-            {
-                var success = emailProvider.ReadData();
-                if (success)
-                {
-                    var items = emailProvider.GetAll();
-                    if (items != null)
-                        items.ToObservableCollection(Emails);
-                }
-            }
+                RenewCollection(emailProvider, collection);
 
             if (collection is ObservableCollection<ShedulerTask>)
-            {
-                var success = shedulerProvider.ReadData();
-                if (success)
-                {
-                    var items = shedulerProvider.GetAll();
-                    if (items != null)
-                        items.ToObservableCollection(ShedulerTasks);
-                }
-            }
+                RenewCollection(shedulerProvider, collection);
         }
 
-        private void FiltrateRecipients()
+        private bool UpgradeCollection<T>(ItemStatus status, dynamic provider, ObservableCollection<T> collection,
+                                          T item, Action<ObservableCollection<T>> Method)
+            where T : BaseEntity
         {
-            Refresh(Recipients);
-
-            if (Recipients != null)
+            try
             {
-                var recips = Recipients.Where(r => r.Name.StartsWith(Filter)).ToArray();
+                if (status == ItemStatus.Create)
+                {
+                    provider.Create(item);
+                    var success = provider.SaveChanges();
+                    if (success)
+                        Method(collection);
+                }
+
+                if (status == ItemStatus.Edit)
+                {
+                    if (item != null)
+                    {
+                        provider.Edit(item.Id, item);
+                        var success = provider.SaveChanges();
+                        if (success)
+                            Method(collection);
+                    }
+                }
+
+                if (status == ItemStatus.Delete)
+                {
+                    if (item != null)
+                    {
+                        provider.Delete(item.Id);
+                        var success = provider.SaveChanges();
+                        if (success)
+                            Method(collection);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        #endregion
+
+        private void FiltrateRecipients(ObservableCollection<Recipient> recipients)
+        {
+            Refresh(recipients);
+
+            if (recipients != null)
+            {
+                var recips = recipients.Where(r => r.Name.StartsWith(Filter)).ToArray();
                 if (recips != null && recips.Length > 0)
                 {
-                    Recipients.Clear();
-                    recips.ToObservableCollection(Recipients);
+                    recipients.Clear();
+                    recips.ToObservableCollection(recipients);
                 }
             }
         }
@@ -478,59 +501,34 @@ namespace MailSender.ViewModel
         private void OnAcceptCommand()
         {
             if (WindowsService.InputDataWindow is AddSender)
-            {
-                senderProvider.Create(NewSender);
-                var success = senderProvider.SaveChanges();
-                if (success)
-                    Refresh(Senders);
-            }
+                UpgradeCollection(ItemStatus.Create, senderProvider, Senders, NewSender, Refresh);
 
             if (WindowsService.InputDataWindow is EditSender)
-            {
-                senderProvider.Edit(SelectedSender.Id, SelectedSender);
-                var success = senderProvider.SaveChanges();
-                if (success)
-                    Refresh(Senders);
-            }
+                UpgradeCollection(ItemStatus.Edit, senderProvider, Senders, SelectedSender, Refresh);
 
             if (WindowsService.InputDataWindow is AddServer)
-            {
-                serverProvider.Create(NewServer);
-                var success = serverProvider.SaveChanges();
-                if (success)
-                    Refresh(Servers);
-            }
+                UpgradeCollection(ItemStatus.Create, serverProvider, Servers, NewServer, Refresh);
 
             if (WindowsService.InputDataWindow is EditServer)
-            {
-                serverProvider.Edit(SelectedServer.Id, SelectedServer);
-                var success = serverProvider.SaveChanges();
-                if (success)
-                    Refresh(Servers);
-            }
+                UpgradeCollection(ItemStatus.Edit, serverProvider, Servers, SelectedServer, Refresh);
 
             if (WindowsService.InputDataWindow is AddRecipient)
             {
-                recipientProvider.Create(NewRecipient);
-                var success = recipientProvider.SaveChanges();
+                var success = UpgradeCollection(ItemStatus.Create, recipientProvider, Recipients, NewRecipient, Refresh);
                 if (success)
-                {
-                    Refresh(Recipients);
                     Filter = "";
-                }
             }
 
             if (WindowsService.InputDataWindow is EditRecipient)
             {
-                recipientProvider.Edit(SelectedRecipient.Id, SelectedRecipient);
-                var success = recipientProvider.SaveChanges();
-                if (success)
-                {
-                    if (Filter != null && Filter.Length > 0)
-                        FiltrateRecipients();
-                    else
-                        Refresh(Recipients);
-                }
+                Action<ObservableCollection<Recipient>> Method;
+                
+                if (Filter != null && Filter.Length > 0)
+                    Method = FiltrateRecipients;
+                else
+                    Method = Refresh;
+
+                UpgradeCollection(ItemStatus.Edit, recipientProvider, Recipients, SelectedRecipient, Method);
             }
 
             WindowsService.InputDataWindow.Close();
@@ -567,13 +565,7 @@ namespace MailSender.ViewModel
 
         private void OnDeleteEmailCommand()
         {
-            if (SelectedEmail != null)
-            {
-                emailProvider.Delete(SelectedEmail.Id);
-                var success = emailProvider.SaveChanges();
-                if (success)
-                    Refresh(Emails);
-            }
+            UpgradeCollection(ItemStatus.Delete, emailProvider, Emails, SelectedEmail, Refresh);
         }
 
         private void OnEditEmailCommand()
@@ -624,18 +616,14 @@ namespace MailSender.ViewModel
 
         private void OnDeleteRecipientCommand()
         {
-            if (SelectedRecipient != null)
-            {
-                recipientProvider.Delete(SelectedRecipient.Id);
-                var success = recipientProvider.SaveChanges();
-                if (success)
-                {
-                    if (Filter != null && Filter.Length > 0)
-                        FiltrateRecipients();
-                    else
-                        Refresh(Recipients);
-                }
-            }
+            Action<ObservableCollection<Recipient>> Method;
+
+            if (Filter != null && Filter.Length > 0)
+                Method = FiltrateRecipients;
+            else
+                Method = Refresh;
+
+            UpgradeCollection(ItemStatus.Delete, recipientProvider, Recipients, SelectedRecipient, Method);
         }
 
         private void OnEditRecipientCommand()
@@ -653,13 +641,7 @@ namespace MailSender.ViewModel
 
         private void OnDeleteServerCommand()
         {
-            if (SelectedServer != null)
-            {
-                serverProvider.Delete(SelectedServer.Id);
-                var success = serverProvider.SaveChanges();
-                if (success)
-                    Refresh(Servers);
-            }
+            UpgradeCollection(ItemStatus.Delete, serverProvider, Servers, SelectedServer, Refresh);
         }
 
         private void OnEditSeverCommand()
@@ -677,13 +659,7 @@ namespace MailSender.ViewModel
 
         private void OnDeleteSenderCommand()
         {
-            if (SelectedSender != null)
-            {
-                senderProvider.Delete(SelectedSender.Id);
-                var success = senderProvider.SaveChanges();
-                if (success)
-                    Refresh(Senders);
-            }
+            UpgradeCollection(ItemStatus.Delete, senderProvider, Senders, SelectedSender, Refresh);
         }
 
         private void OnEditSenderCommand()
