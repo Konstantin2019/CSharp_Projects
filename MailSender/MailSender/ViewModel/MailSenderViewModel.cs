@@ -380,7 +380,10 @@ namespace MailSender.ViewModel
             {
                 var items = provider.GetAll();
                 if (items != null)
+                {
+                    collection.Clear();
                     items.ToObservableCollection(collection);
+                }
             }
         }
 
