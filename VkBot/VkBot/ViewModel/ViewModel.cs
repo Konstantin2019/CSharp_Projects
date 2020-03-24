@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using ExtentionLib;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
@@ -81,7 +82,7 @@ namespace VkBot.ViewModel
             if (Message != null && Message.Length > 5)
             {
                 var responses = await vkService.SendAsync(Message);
-                Responses = responses.ToObservableCollection();
+                responses.ToObservableCollection(Responses);
             }
 
             else

@@ -49,7 +49,7 @@ namespace MailSender.ViewModel
         #endregion
 
         #region Events
-        private event Action<ObservableCollection<Recipient>, InMemoryDataProvider<Recipient>> RecipientsFiltrationEvent;
+        private event Action<InMemoryDataProvider<Recipient>, ObservableCollection<Recipient>> RecipientsFiltrationEvent;
         #endregion
 
         #region Structs and Enums
@@ -78,7 +78,7 @@ namespace MailSender.ViewModel
             set
             {
                 Set(ref filter, value);
-                RecipientsFiltrationEvent?.Invoke(Recipients, recipientProvider);
+                RecipientsFiltrationEvent?.Invoke(recipientProvider, Recipients);
             }
         }
 
@@ -251,7 +251,7 @@ namespace MailSender.ViewModel
             InitializeShedulerTasksCommand = new RelayCommand(OnInitializeShedulerTasksCommand);
             DeleteNotActualTasks = new RelayCommand(OnDeleteNotActualTasks);
 
-            RecipientsFiltrationEvent += FiltrateRecipients;
+            RecipientsFiltrationEvent += Filtrate;
         }
 
         #region ShedulerTasksWrapperMethods
@@ -285,7 +285,7 @@ namespace MailSender.ViewModel
             shedulerProvider.Create(shedulerTask);
             var success = shedulerProvider.SaveChanges();
             if (success)
-                Refresh(ShedulerTasks, shedulerProvider);
+                Refresh(shedulerProvider, ShedulerTasks);
         }
 
         private bool DeleteShedulerTask(ShedulerTask shedulerTask)
@@ -303,7 +303,7 @@ namespace MailSender.ViewModel
                 shedulerProvider.Delete(shedulerTask.Id);
                 var success = shedulerProvider.SaveChanges();
                 if (success)
-                    Refresh(ShedulerTasks, shedulerProvider);
+                    Refresh(shedulerProvider, ShedulerTasks);
                 return true;
             }
             else
@@ -340,7 +340,7 @@ namespace MailSender.ViewModel
                             dispatcher.Invoke(DispatcherPriority.Normal,
                                              (ThreadStart)delegate ()
                                              {
-                                                 Refresh(ShedulerTasks, shedulerProvider);
+                                                 Refresh(shedulerProvider, ShedulerTasks);
                                              });
                         }
                     }, abort.Token);
@@ -372,7 +372,7 @@ namespace MailSender.ViewModel
         #endregion
 
         #region CommonMethods
-        private void Refresh<T>(ObservableCollection<T> collection, InMemoryDataProvider<T> provider)
+        private void Refresh<T>(InMemoryDataProvider<T> provider, ObservableCollection<T> collection)
             where T : BaseEntity
         {
             var success = provider.ReadData();
@@ -387,56 +387,10 @@ namespace MailSender.ViewModel
             }
         }
 
-        private bool UpgradeCollection<T>(ItemStatus status, 
-                                          InMemoryDataProvider<T> provider, 
-                                          ObservableCollection<T> collection, T item, 
-                                          Action<ObservableCollection<T>, InMemoryDataProvider<T>> Method)
-            where T : BaseEntity
+        private void Filtrate<T>(InMemoryDataProvider<T> provider, ObservableCollection<T> recipients)
+         where T : NamedEntity
         {
-            try
-            {
-                if (status == ItemStatus.Create)
-                {
-                    provider.Create(item);
-                    var success = provider.SaveChanges();
-                    if (success)
-                        Method(collection, provider);
-                }
-
-                if (status == ItemStatus.Edit)
-                {
-                    if (item != null)
-                    {
-                        provider.Edit(item.Id, item);
-                        var success = provider.SaveChanges();
-                        if (success)
-                            Method(collection, provider);
-                    }
-                }
-
-                if (status == ItemStatus.Delete)
-                {
-                    if (item != null)
-                    {
-                        provider.Delete(item.Id);
-                        var success = provider.SaveChanges();
-                        if (success)
-                            Method(collection, provider);
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-        #endregion
-
-        private void FiltrateRecipients(ObservableCollection<Recipient> recipients, InMemoryDataProvider<Recipient> provider)
-        {
-            Refresh(recipients, provider);
+            Refresh(provider, recipients);
 
             if (recipients != null)
             {
@@ -448,6 +402,53 @@ namespace MailSender.ViewModel
                 }
             }
         }
+
+        private bool UpgradeCollection<T>(ItemStatus status, 
+                                          InMemoryDataProvider<T> provider, 
+                                          ObservableCollection<T> collection, T item, 
+                                          Action<InMemoryDataProvider<T>, ObservableCollection<T>> RefreshMethod)
+            where T : BaseEntity
+        {
+            try
+            {
+                if (status == ItemStatus.Create)
+                {
+                    provider.Create(item);
+                    var success = provider.SaveChanges();
+                    if (success)
+                        RefreshMethod(provider, collection);
+                }
+
+                if (status == ItemStatus.Edit)
+                {
+                    if (item != null)
+                    {
+                        provider.Edit(item.Id, item);
+                        var success = provider.SaveChanges();
+                        if (success)
+                            RefreshMethod(provider, collection);
+                    }
+                }
+
+                if (status == ItemStatus.Delete)
+                {
+                    if (item != null)
+                    {
+                        provider.Delete(item.Id);
+                        var success = provider.SaveChanges();
+                        if (success)
+                            RefreshMethod(provider, collection);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        #endregion
 
         #region OnMethods
         private void OnDeleteNotActualTasks()
@@ -470,11 +471,11 @@ namespace MailSender.ViewModel
 
         private void OnTotalRefreshCommand()
         {
-            Refresh(Senders, senderProvider);
-            Refresh(Servers, serverProvider);
-            Refresh(Recipients, recipientProvider);
-            Refresh(Emails, emailProvider);
-            Refresh(ShedulerTasks, shedulerProvider);
+            Refresh(senderProvider, Senders);
+            Refresh(serverProvider, Servers);
+            Refresh(recipientProvider, Recipients);
+            Refresh(emailProvider, Emails);
+            Refresh(shedulerProvider, ShedulerTasks);
         }
 
         private void OnAbortCommand()
@@ -505,14 +506,14 @@ namespace MailSender.ViewModel
 
             if (WindowsService.InputDataWindow is EditRecipient)
             {
-                Action<ObservableCollection<Recipient>, InMemoryDataProvider<Recipient>> Method;
+                Action<InMemoryDataProvider<Recipient>, ObservableCollection<Recipient>> RefreshMethod;
                 
                 if (Filter != null && Filter.Length > 0)
-                    Method = FiltrateRecipients;
+                    RefreshMethod = Filtrate;
                 else
-                    Method = Refresh;
+                    RefreshMethod = Refresh;
 
-                UpgradeCollection(ItemStatus.Edit, recipientProvider, Recipients, SelectedRecipient, Method);
+                UpgradeCollection(ItemStatus.Edit, recipientProvider, Recipients, SelectedRecipient, RefreshMethod);
             }
 
             WindowsService.InputDataWindow.Close();
@@ -542,7 +543,7 @@ namespace MailSender.ViewModel
                 success = emailProvider.SaveChanges();
             }
             if (success)
-                Refresh(Emails, emailProvider);
+                Refresh(emailProvider, Emails);
 
             TabIndex = 1;
         }
@@ -600,14 +601,14 @@ namespace MailSender.ViewModel
 
         private void OnDeleteRecipientCommand()
         {
-            Action<ObservableCollection<Recipient>, InMemoryDataProvider<Recipient>> Method;
+            Action<InMemoryDataProvider<Recipient>, ObservableCollection<Recipient>> RefreshMethod;
 
             if (Filter != null && Filter.Length > 0)
-                Method = FiltrateRecipients;
+                RefreshMethod = Filtrate;
             else
-                Method = Refresh;
+                RefreshMethod = Refresh;
 
-            UpgradeCollection(ItemStatus.Delete, recipientProvider, Recipients, SelectedRecipient, Method);
+            UpgradeCollection(ItemStatus.Delete, recipientProvider, Recipients, SelectedRecipient, RefreshMethod);
         }
 
         private void OnEditRecipientCommand()
