@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="http://prismlibrary.com"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             x:Class="HatGameMobile.Views.PresetWordsPage"
+             Title="{Binding Path=Title}">
+    
+    <ContentPage.Content>
+        <StackLayout>
+            <StackLayout>
+                <Label Text="Сколько слов будет в шляпе?"
+                       HorizontalTextAlignment="Center"/>
+                <Picker x:Name="num_pkr">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>5 слов</x:String>
+                            <x:String>7 слов</x:String>
+                            <x:String>10 слов</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+                <Label Text="Выберите уровень сложности слов"
+                       HorizontalTextAlignment="Center"/>
+                <Picker x:Name="cmplx_pkr">
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Легко</x:String>
+                            <x:String>Средне</x:String>
+                            <x:String>Сложно</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
+                <Button x:Name="add_btn"
+                        Text="Добавить"/>
+            </StackLayout>
+        </StackLayout>
+    </ContentPage.Content>
+    
+</ContentPage>

@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="http://prismlibrary.com"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             x:Class="HatGameMobile.Views.PlayGamePage"
+             Title="{Binding Path=Title}">
+
+    <ContentPage.Content>
+        <StackLayout>
+            <Label HorizontalTextAlignment="Center"/>
+            <StackLayout Orientation="Horizontal"
+                         HorizontalOptions="CenterAndExpand">
+                <Button Text="Извлечь" Padding="5"/>
+                <Button Text="Угадано" Padding="5"/>
+            </StackLayout>
+            <StackLayout Orientation="Horizontal"
+                         HorizontalOptions="CenterAndExpand">
+                <Label Text="Текущий счёт:"
+                       HorizontalTextAlignment="Start"/>
+                <Label HorizontalTextAlignment="End"/>
+            </StackLayout>
+            <StackLayout Orientation="Horizontal"
+                         HorizontalOptions="CenterAndExpand">
+                <Label Text="Слов в шляпе:"
+                       HorizontalTextAlignment="Start"/>
+                <Label x:Name="hat_lb"
+                       HorizontalTextAlignment="End"/>
+            </StackLayout>
+        </StackLayout>
+    </ContentPage.Content>
+    
+</ContentPage>
