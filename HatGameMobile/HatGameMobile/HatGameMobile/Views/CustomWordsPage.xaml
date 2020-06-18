@@ -3,27 +3,35 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:prism="http://prismlibrary.com"
              prism:ViewModelLocator.AutowireViewModel="True"
-             x:Class="HatGameMobile.Views.CustomWordsPage"
-             Title="{Binding Path=Title}">
-    
+             x:Class="HatGameMobile.Views.CustomWordsPage">
+
+    <NavigationPage.TitleView>
+        <Label Text="{Binding Path=Title}" 
+               HorizontalTextAlignment="Start"
+               FontSize="Title"
+               TextColor="White"/>
+    </NavigationPage.TitleView>
+
     <ContentPage.Content>
-        <StackLayout>
-            <StackLayout>
-                <Label Text="Сколько слов будет в шляпе?"
-                       HorizontalTextAlignment="Center"/>
-                <Picker x:Name="num_pkr">
-                    <Picker.ItemsSource>
-                        <x:Array Type="{x:Type x:String}">
-                            <x:String>5 слов</x:String>
-                            <x:String>7 слов</x:String>
-                            <x:String>10 слов</x:String>
-                        </x:Array>
-                    </Picker.ItemsSource>
-                </Picker>
-                <Entry x:Name="word_entry"
-                       Placeholder="Введите слово"/>
-                <Button x:Name="add_btn"
-                        Text="Добавить"/>
+        <StackLayout Margin="{StaticResource Key=PageMargin}">
+            <Label Text="Сколько слов будет в шляпе?"
+                   HorizontalTextAlignment="Center"/>
+            <Picker SelectedItem="{Binding Path=SelectedNumber}">
+                <Picker.ItemsSource>
+                    <x:Array Type="{x:Type x:String}">
+                        <x:String>5 слов</x:String>
+                        <x:String>7 слов</x:String>
+                        <x:String>10 слов</x:String>
+                    </x:Array>
+                </Picker.ItemsSource>
+            </Picker>
+            <Entry Placeholder="Введите слово"
+                   Text="{Binding Path=NewWord}"/>
+            <Button Text="Добавить" 
+                    Command="{Binding Path=AddCustomWordCommand}"/>
+            <StackLayout Orientation="Horizontal">
+                <Label Text="Слов добавлено:"/>
+                <Label Text="{Binding Path=Counter}"/>
             </StackLayout>
         </StackLayout>
     </ContentPage.Content>

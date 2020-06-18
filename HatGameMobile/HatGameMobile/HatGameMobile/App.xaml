@@ -1,11 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <prism:PrismApplication xmlns="http://xamarin.com/schemas/2014/forms"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:prism="http://prismlibrary.com"
-             x:Class="HatGameMobile.App">
+                        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                        xmlns:prism="http://prismlibrary.com"
+                        x:Class="HatGameMobile.App">
   <Application.Resources>
 
-    <!-- Application resource dictionary -->
+        <Thickness x:Key="PageMargin">20</Thickness>
 
-  </Application.Resources>
+        <Color x:Key="AppBackgroundColor">AliceBlue</Color>
+        <Color x:Key="NavigationBarColor">#1976D2</Color>
+        <Color x:Key="NavigationBarTextColor">White</Color>
+        <Color x:Key="NormalTextColor">Black</Color>
+
+        <Style TargetType="{x:Type NavigationPage}">
+            <Setter Property="BarBackgroundColor"
+                    Value="{StaticResource Key=NavigationBarColor}"/>
+            <Setter Property="BarTextColor"
+                    Value="{StaticResource Key=NavigationBarTextColor}"/>
+        </Style>
+
+        <Style TargetType="{x:Type ContentPage}"
+               ApplyToDerivedTypes="True">
+            <Setter Property="BackgroundColor"
+                    Value="{StaticResource Key=AppBackgroundColor}"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="FontSize" Value="Medium"/>
+            <Setter Property="BackgroundColor" Value="#1976D2"/>
+            <Setter Property="TextColor" Value="White"/>
+            <Setter Property="CornerRadius" Value="5"/>
+        </Style>
+
+    </Application.Resources>
 </prism:PrismApplication>

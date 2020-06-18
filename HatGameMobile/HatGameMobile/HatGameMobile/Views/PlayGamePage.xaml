@@ -3,28 +3,44 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:prism="http://prismlibrary.com"
              prism:ViewModelLocator.AutowireViewModel="True"
-             x:Class="HatGameMobile.Views.PlayGamePage"
-             Title="{Binding Path=Title}">
+             x:Class="HatGameMobile.Views.PlayGamePage">
+
+    <NavigationPage.TitleView>
+        <Label Text="{Binding Path=Title}" 
+               HorizontalTextAlignment="Start"
+               FontSize="Title"
+               TextColor="White"/>
+    </NavigationPage.TitleView>
 
     <ContentPage.Content>
-        <StackLayout>
-            <Label HorizontalTextAlignment="Center"/>
+        <StackLayout Margin="{StaticResource Key=PageMargin}">
+            <Button Text="Начать раунд"
+                    Padding="5"
+                    Command="{Binding Path=StartRoundCommand}"/>
+            <Label Text="{Binding Path=CurrentWord}" 
+                   HorizontalTextAlignment="Center"
+                   FontSize="Large"/>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">
-                <Button Text="Извлечь" Padding="5"/>
-                <Button Text="Угадано" Padding="5"/>
+                <Button Text="Пропустить" 
+                        Padding="5"
+                        Command="{Binding Path=SkipCommand}"/>
+                <Button Text="Угадано" 
+                        Padding="5"
+                        Command="{Binding Path=DoneCommand}"/>
             </StackLayout>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">
                 <Label Text="Текущий счёт:"
                        HorizontalTextAlignment="Start"/>
-                <Label HorizontalTextAlignment="End"/>
+                <Label Text="{Binding Path=Score}"
+                       HorizontalTextAlignment="End"/>
             </StackLayout>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">
                 <Label Text="Слов в шляпе:"
                        HorizontalTextAlignment="Start"/>
-                <Label x:Name="hat_lb"
+                <Label Text="{Binding Path=WordsInHat}"
                        HorizontalTextAlignment="End"/>
             </StackLayout>
         </StackLayout>

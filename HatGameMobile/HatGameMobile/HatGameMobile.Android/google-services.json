@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "170671767960",
+    "firebase_url": "https://hatgame-9b0b3.firebaseio.com",
+    "project_id": "hatgame-9b0b3",
+    "storage_bucket": "hatgame-9b0b3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:170671767960:android:d5392db83fb47afab72bed",
+        "android_client_info": {
+          "package_name": "com.konst.hatgame"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "170671767960-gnec4kjp0jqr5v2cn3jg91sda12l4g1l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPtUwY93JKL1lrIRH6-v9LlHdRr04lJzs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "170671767960-gnec4kjp0jqr5v2cn3jg91sda12l4g1l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

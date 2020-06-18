@@ -1,14 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="HatGameMobile.Views.MainPage"
-             Title="{Binding Path=Title}">
+             x:Class="HatGameMobile.Views.MainPage">
 
-    <StackLayout>
-        <Button Text="Начать игру" Command="{Binding Path=NavigateToPlay}"/>
-        <Button Text="Собрать свою шляпу" Command="{Binding Path=NavigateToCustom}"/>
-        <Button Text="Использовать готовые слова" Command="{Binding Path=NavigateToPreset}"/>
-        <Button Text="Выход" Command="{Binding Path=NavigateToExit}"/>
+    <NavigationPage.TitleView>
+        <Label Text="{Binding Path=Title}" 
+               HorizontalTextAlignment="Center"
+               FontSize="Title"
+               TextColor="White"/>
+    </NavigationPage.TitleView>
+
+    <StackLayout Margin="{StaticResource Key=PageMargin}">
+        <Button Text="Начать игру" 
+                Command="{Binding Path=NavigateToPlay}"/>
+        <Button Text="Собрать свою шляпу" 
+                Command="{Binding Path=NavigateToCustom}"/>
+        <Button Text="Использовать готовые слова" 
+                Command="{Binding Path=NavigateToPreset}"/>
+        <Button Text="Выход" 
+                Command="{Binding Path=NavigateToExit}"/>
     </StackLayout>
 
 </ContentPage>

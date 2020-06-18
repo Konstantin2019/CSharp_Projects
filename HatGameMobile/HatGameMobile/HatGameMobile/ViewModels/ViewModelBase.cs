@@ -1,9 +1,5 @@
-﻿using Prism.Commands;
-using Prism.Mvvm;
+﻿using Prism.Mvvm;
 using Prism.Navigation;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace HatGameMobile.ViewModels
 {
@@ -14,8 +10,8 @@ namespace HatGameMobile.ViewModels
         private string title;
         public string Title
         {
-            get { return title; }
-            set { SetProperty(ref title, value); }
+            get => title;
+            set => SetProperty(ref title, value);
         }
 
         public ViewModelBase(INavigationService navigationService)
