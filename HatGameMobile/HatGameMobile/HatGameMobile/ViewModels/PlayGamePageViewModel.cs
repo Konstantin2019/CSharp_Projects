@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Timer = System.Timers.Timer;
 
 namespace HatGameMobile.ViewModels
 {
@@ -23,11 +24,13 @@ namespace HatGameMobile.ViewModels
         private bool startCanExecute;
         private bool skipCanExecute;
         private bool doneCanExecute;
+        private double roundTime;
         private readonly ICollectionReference hatCollectionRef;
         private List<Word> doneWords;
         private readonly IObservable<Unit> startSeq;
         private readonly IObservable<Unit> doneSeq;
-        private readonly Stopwatch timer;
+        private readonly Stopwatch faultTimer;
+        private readonly Timer roundTimer;
         private byte Stage
         {
             get => stage;
@@ -63,6 +66,11 @@ namespace HatGameMobile.ViewModels
             get => doneCanExecute;
             set => SetProperty(ref doneCanExecute, value);
         }
+        public double RoundTime 
+        {
+            get => roundTime;
+            set => SetProperty(ref roundTime, value);
+        }
         public DelegateCommand StartRoundCommand { get; }
         public DelegateCommand DoneCommand { get; }
         public DelegateCommand SkipCommand { get; }
@@ -70,13 +78,21 @@ namespace HatGameMobile.ViewModels
             : base(navigationService)
         {
             Stage = 1;
+            RoundTime = 1;
             penalty = 0;
             doneWords = new List<Word>();
+
             StartRoundCommand = new DelegateCommand(OnStartRoundExecuted).ObservesCanExecute(() => StartCanExecute);
             SkipCommand = new DelegateCommand(OnSkipExecuted).ObservesCanExecute(() => SkipCanExecute);
             DoneCommand = new DelegateCommand(OnDoneExecuted).ObservesCanExecute(() => DoneCanExecute);
+
             hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("Hat");
-            timer = new Stopwatch();
+
+            faultTimer = new Stopwatch();
+
+            roundTimer = new Timer(1000);
+            roundTimer.Elapsed += RoundTimer_Elapsed;
+            roundTimer.AutoReset = true;
 
             Observable.FromAsync(async _ =>
             {
@@ -87,17 +103,13 @@ namespace HatGameMobile.ViewModels
                 WordsInHat = s;
                 if (s < 10)
                 {
-                    Title = "Шляпа пуста :(";
-                    StartCanExecute = false;
-                    SkipCanExecute = false;
-                    DoneCanExecute = false;
+                    Title = "Недостаточно слов :(";
+                    DisableMode();
                 }
                 else 
                 {
                     Title = $"Идёт {Stage} этап";
-                    StartCanExecute = true;
-                    SkipCanExecute = false;
-                    DoneCanExecute = false;
+                    StopMode();
                 }
             });
 
@@ -136,6 +148,7 @@ namespace HatGameMobile.ViewModels
                 WordsInHat = snapshot.Count;
                 if (WordsInHat == 0) 
                 {
+                    DisableMode();
                     Stage++;
 
                     if (Stage == 4)
@@ -158,39 +171,36 @@ namespace HatGameMobile.ViewModels
                     else 
                     {
                         Title = "Игра завершена";
-                        StartCanExecute = false;
-                        SkipCanExecute = false;
-                        DoneCanExecute = false;
-                    }
-                });
-
-            this.ObservableForProperty(p => p.WordsInHat)
-                .Select(p => p.Value)
-                .Subscribe(s => 
-                {
-                    if (s == 0) 
-                    {
-                        CurrentWord = null;
-                        SkipCanExecute = false;
-                        DoneCanExecute = false;
+                        DisableMode();
                     }
                 });
         }
+
+        private void RoundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            RoundTime -= roundTimer.Interval / 60000;
+            if (RoundTime < 0) 
+            {
+                roundTimer.Stop();
+                StopMode();
+            }
+        }
+
         private void OnSkipExecuted()
         {
-            if (timer.ElapsedMilliseconds > 5000)
+            if (faultTimer.ElapsedMilliseconds > 5000)
                 penalty++;
 
-            startSeq.Subscribe(s => { timer.Restart(); });
+            startSeq.Subscribe(s => { faultTimer.Restart(); });
         }
         private void OnStartRoundExecuted()
         {
+            roundTimer.Start();
+
             startSeq.Subscribe(s =>
             {
-                timer.Start();
-                StartCanExecute = false;
-                SkipCanExecute = true;
-                DoneCanExecute = true;
+                faultTimer.Start();
+                PlayMode();
             });
         }
         private void OnDoneExecuted()
@@ -200,8 +210,28 @@ namespace HatGameMobile.ViewModels
                 Score += 1 - penalty;
                 penalty = 0;
                 if (wordsInHat > 0)
-                    startSeq.Subscribe(_ => { timer.Restart(); });
+                    startSeq.Subscribe(_ => { faultTimer.Restart(); });
             });
+        }
+        private void PlayMode() 
+        {
+            StartCanExecute = false;
+            SkipCanExecute = true;
+            DoneCanExecute = true;
+        }
+        private void StopMode()
+        {
+            CurrentWord = null;
+            StartCanExecute = true;
+            SkipCanExecute = false;
+            DoneCanExecute = false;
+        }
+        private void DisableMode()
+        {
+            CurrentWord = null;
+            StartCanExecute = false;
+            SkipCanExecute = false;
+            DoneCanExecute = false;
         }
     }
 }

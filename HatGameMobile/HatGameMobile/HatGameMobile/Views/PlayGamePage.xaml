@@ -43,6 +43,10 @@
                 <Label Text="{Binding Path=WordsInHat}"
                        HorizontalTextAlignment="End"/>
             </StackLayout>
+            <ProgressBar ProgressColor="ForestGreen"
+                         Margin="0,50,0,0"
+                         ScaleY="5"
+                         Progress="{Binding Path=RoundTime}"/>
         </StackLayout>
     </ContentPage.Content>
     
