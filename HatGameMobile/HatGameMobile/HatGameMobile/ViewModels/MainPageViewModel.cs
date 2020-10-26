@@ -15,7 +15,7 @@ namespace HatGameMobile.ViewModels
         public MainPageViewModel(INavigationService navigationService)
             : base(navigationService)
         {
-            Title = "Игра **Шляпа**";
+            Title = "--TO DO--";
 
             NavigateToPlay = new DelegateCommand(OnNavigateToPlayExecuted);
             NavigateToCustom = new DelegateCommand(OnNavigateToCustomExecuted);

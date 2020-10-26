@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="http://prismlibrary.com"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             x:Class="HatGameMobile.Views.JoinRoomPage">
+
+    <NavigationPage.TitleView>
+        <Label Text="{Binding Path=Title}" 
+               HorizontalTextAlignment="Center"
+               FontSize="Title"
+               TextColor="White"/>
+    </NavigationPage.TitleView>
+
+    <Grid Margin="{StaticResource Key=PageMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="40*"/>
+            <ColumnDefinition Width="60*"/>
+        </Grid.ColumnDefinitions>
+        <Label Text="Имя комнаты : "
+               Grid.Row="0"
+               Grid.Column="0"
+               VerticalTextAlignment="Center"/>
+        <Entry Text="{Binding Path=RoomName}"
+               Grid.Row="0"
+               Grid.Column="1"
+               VerticalTextAlignment="Center"/>
+        <Label Text="Пароль : "
+               Grid.Row="1"
+               Grid.Column="0"
+               VerticalTextAlignment="Center"/>
+        <Entry Text="{Binding Path=RoomPassword}"
+               IsPassword="True"
+               Grid.Row="1"
+               Grid.Column="1"
+               VerticalTextAlignment="Center"/>
+        <Label Text="Имя команды : "
+               Grid.Row="2"
+               Grid.Column="0"
+               VerticalTextAlignment="Center"/>
+        <Entry Text="{Binding Path=TeamName}"
+               IsPassword="True"
+               Grid.Row="2"
+               Grid.Column="1"
+               VerticalTextAlignment="Center"/>
+        <Button Text="Присоединиться к комнате"
+                Command="{Binding Path=JoinGameRoom}"
+                Grid.Row="3"
+                Grid.ColumnSpan="2"/>
+    </Grid>
+    
+</ContentPage>

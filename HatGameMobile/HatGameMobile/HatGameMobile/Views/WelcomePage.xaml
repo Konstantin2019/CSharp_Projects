@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="http://prismlibrary.com"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             x:Class="HatGameMobile.Views.WelcomePage">
+
+    <NavigationPage.TitleView>
+        <Label Text="{Binding Path=Title}" 
+               HorizontalTextAlignment="Center"
+               FontSize="Title"
+               TextColor="White"/>
+    </NavigationPage.TitleView>
+
+    <StackLayout Margin="{StaticResource Key=PageMargin}">
+        <Button Text="Создать игровую комнату" 
+                Command="{Binding Path=NavigateToCreateRoom}"/>
+        <Button Text="Присоединиться к игровой комнате" 
+                Command="{Binding Path=NavigateToJoinRoom}"/>
+        <Button Text="Выход из игры" 
+                Command="{Binding Path=NavigateToQuitGame}"/>
+    </StackLayout>
+
+</ContentPage>
