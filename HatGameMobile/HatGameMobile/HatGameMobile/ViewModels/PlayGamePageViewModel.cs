@@ -90,7 +90,7 @@ namespace HatGameMobile.ViewModels
 
             faultTimer = new Stopwatch();
 
-            roundTimer = new Timer(1000);
+            roundTimer = new Timer(100);
             roundTimer.Elapsed += RoundTimer_Elapsed;
             roundTimer.AutoReset = true;
 
