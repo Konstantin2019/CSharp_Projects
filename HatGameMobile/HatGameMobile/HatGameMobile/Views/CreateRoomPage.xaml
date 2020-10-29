@@ -14,9 +14,10 @@
 
     <Grid Margin="{StaticResource Key=PageMargin}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -40,7 +41,7 @@
                Grid.Row="1"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>
-        <CheckBox IsChecked="{Binding Path=AutoPaswwordGen}"
+        <CheckBox IsChecked="{Binding Path=AutoPasswordGen}"
                   Grid.Row="2"
                   Grid.Column="0"
                   VerticalOptions="Center"
@@ -49,9 +50,17 @@
                Grid.Row="2"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>
+        <Label Text="Имя команды : "
+               Grid.Row="3"
+               Grid.Column="0"
+               VerticalTextAlignment="Center"/>
+        <Entry Text="{Binding Path=TeamName}"
+               Grid.Row="3"
+               Grid.Column="1"
+               VerticalTextAlignment="Center"/>
         <Button Text="Создать комнату"
                 Command="{Binding Path=CreateGameRoom}"
-                Grid.Row="3"
+                Grid.Row="4"
                 Grid.ColumnSpan="2"/>
     </Grid>
 </ContentPage>

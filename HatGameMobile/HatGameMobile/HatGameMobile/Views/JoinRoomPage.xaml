@@ -14,9 +14,9 @@
 
     <Grid Margin="{StaticResource Key=PageMargin}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -45,7 +45,6 @@
                Grid.Column="0"
                VerticalTextAlignment="Center"/>
         <Entry Text="{Binding Path=TeamName}"
-               IsPassword="True"
                Grid.Row="2"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>
