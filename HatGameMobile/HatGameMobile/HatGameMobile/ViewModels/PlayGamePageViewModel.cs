@@ -1,7 +1,10 @@
-﻿using HatGameMobile.Models;
+﻿using DynamicData;
+using HatGameMobile.Models;
 using Plugin.CloudFirestore;
+using Plugin.CloudFirestore.Extensions;
 using Prism.Commands;
 using Prism.Navigation;
+using Prism.Services;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
@@ -10,14 +13,17 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Timer = System.Timers.Timer;
 
 namespace HatGameMobile.ViewModels
 {
     public class PlayGamePageViewModel : ViewModelBase
     {
+        private bool isHost;
         private byte stage;
         private string currentWord;
+        private int currentIndex;
         private int score;
         private int wordsInHat;
         private int penalty;
@@ -25,12 +31,20 @@ namespace HatGameMobile.ViewModels
         private bool skipCanExecute;
         private bool doneCanExecute;
         private double roundTime;
-        private readonly ICollectionReference hatCollectionRef;
+        private readonly ICollectionReference roomRef;
+        private readonly ICollectionReference hatRef;
+        private readonly ICollectionReference sessionRef;
+        private readonly ICollectionReference teamsRef;
+        private IListenerRegistration hatListener;
         private List<Word> doneWords;
-        private readonly IObservable<Unit> startSeq;
-        private readonly IObservable<Unit> doneSeq;
+        private List<Team> teams;
+        private readonly IObservable<Unit> extract;
+        private readonly IObservable<Unit> roundStart;
+        private readonly IObservable<Unit> roundStop;
+        private readonly IObservable<Unit> done;
         private readonly Stopwatch faultTimer;
         private readonly Timer roundTimer;
+        private IPageDialogService dialog;
         private byte Stage
         {
             get => stage;
@@ -71,51 +85,91 @@ namespace HatGameMobile.ViewModels
             get => roundTime;
             set => SetProperty(ref roundTime, value);
         }
-        public DelegateCommand StartRoundCommand { get; }
-        public DelegateCommand DoneCommand { get; }
-        public DelegateCommand SkipCommand { get; }
-        public PlayGamePageViewModel(INavigationService navigationService)
+        public ICommand StartRoundCommand { get; }
+        public ICommand DoneCommand { get; }
+        public ICommand SkipCommand { get; }
+        public ICommand NavigateToMainMenu { get; }
+        public ICommand NavigateToRoom { get; }
+
+        public PlayGamePageViewModel(INavigationService navigationService, IPageDialogService dialogService)
             : base(navigationService)
         {
+            dialog = dialogService;
+
             Stage = 1;
             RoundTime = 1;
             penalty = 0;
             doneWords = new List<Word>();
+            teams = new List<Team>();
 
             StartRoundCommand = new DelegateCommand(OnStartRoundExecuted).ObservesCanExecute(() => StartCanExecute);
             SkipCommand = new DelegateCommand(OnSkipExecuted).ObservesCanExecute(() => SkipCanExecute);
             DoneCommand = new DelegateCommand(OnDoneExecuted).ObservesCanExecute(() => DoneCanExecute);
+            NavigateToMainMenu = new DelegateCommand(OnNavigateToMainMenuExecuted);
+            NavigateToRoom = new DelegateCommand(OnNavigateToRoomExecuted);
 
-            hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("Hat");
+            roomRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom");
+            hatRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                         .GetDocument(App.RoomId)
+                                                         .GetCollection("Hat");
+            sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                             .GetDocument(App.RoomId)
+                                                             .GetCollection("Session");
+            teamsRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                           .GetDocument(App.RoomId)
+                                                           .GetCollection("Teams");
 
             faultTimer = new Stopwatch();
 
             roundTimer = new Timer(100);
             roundTimer.Elapsed += RoundTimer_Elapsed;
             roundTimer.AutoReset = true;
-
+                   
             Observable.FromAsync(async _ =>
             {
-                var request = await hatCollectionRef.GetDocumentsAsync();
-                return request;
-            }).Select(r => r.Count).Subscribe(s => 
+                var hatRequest = await hatRef.GetDocumentsAsync();
+                var teamsRequest = await teamsRef.GetDocumentsAsync();
+                return new { wordsCount = hatRequest.Count, teams = teamsRequest.ToObjects<Team>().ToList() };
+            }).Subscribe(s => 
             {
-                WordsInHat = s;
-                if (s < 10)
-                {
-                    Title = "Недостаточно слов :(";
-                    DisableMode();
-                }
-                else 
-                {
-                    Title = $"Идёт {Stage} этап";
+                Title = $"Идёт {Stage} этап";
+                WordsInHat = s.wordsCount;
+                foreach (var t in s.teams) 
+                    teams.Add(t);
+                currentIndex = teams.Select(t => t.IsHost).IndexOf(true);
+                isHost = teams.Where(t => t.Name == App.TeamName).Select(t => t.IsHost).FirstOrDefault();
+                if (isHost)
                     StopMode();
-                }
+                else
+                    DisableMode();
             });
 
-            startSeq = Observable.FromAsync(async _ => 
+            roundStart = Observable.FromAsync(async _ =>
             {
-                var request = await hatCollectionRef.GetDocumentsAsync();
+                if (currentIndex == teams.Count)
+                    currentIndex = 0;
+                Dictionary<FieldPath, object> updates = new Dictionary<FieldPath, object>
+                {
+                    { new FieldPath("TimerStarted"), true }
+                };
+                await sessionRef.GetDocument("CurrentSession")
+                                .UpdateDataAsync(updates);
+            });
+
+            roundStop = Observable.FromAsync(async _ =>
+            {
+                currentIndex++;
+                Dictionary<FieldPath, object> updates = new Dictionary<FieldPath, object>
+                {
+                    { new FieldPath("TimerStarted"), false }
+                };
+                await sessionRef.GetDocument("CurrentSession")
+                                .UpdateDataAsync(updates);
+            });
+
+            extract = Observable.FromAsync(async _ => 
+            {
+                var request = await hatRef.GetDocumentsAsync();
                 return request.ToObjects<Word>().ToList();
             }).Select(words => 
             {
@@ -137,13 +191,48 @@ namespace HatGameMobile.ViewModels
                 return Unit.Default;
             });
 
-            doneSeq = Observable.FromAsync(async _ => 
+            done = Observable.FromAsync(async _ => 
             {
                 doneWords.Add(new Word { Content = CurrentWord });
-                await hatCollectionRef.GetDocument(CurrentWord).DeleteDocumentAsync();
+                await hatRef.GetDocument(CurrentWord).DeleteDocumentAsync();
             });
 
-            hatCollectionRef.AddSnapshotListener((snapshot, error) =>
+            roomRef.ObserveRemoved()
+                   .Subscribe(s =>
+                   {
+                       if (s.Document.Id == App.RoomId)
+                       {
+                           if (!isHost) 
+                           {
+                               var dispatcher = Prism.PrismApplicationBase.Current.Dispatcher;
+                               dispatcher.BeginInvokeOnMainThread(async () =>
+                               {
+                                   await dialog.DisplayAlertAsync("Информация", "Хост прервал сессию!", "OK");
+                                   await NavigationService.NavigateAsync("/NavigationPage/WelcomePage");
+                               });
+                           }
+                       }
+                   });
+
+            sessionRef.ObserveModified()
+                      .Subscribe(change => 
+                      {
+                          var status = change.Document.ToObject<Session>();
+                          if (status.TimerStarted)
+                              roundTimer.Start();
+                          else
+                              roundTimer.Stop();
+                      });
+
+            teamsRef.ObserveAdded()
+                    .Subscribe(t => 
+                    {
+                        var team = t.Document.ToObject<Team>();
+                        if (!teams.Contains(team))
+                            teams.Add(team);
+                    });
+
+            hatListener = hatRef.AddSnapshotListener((snapshot, error) =>
             {
                 WordsInHat = snapshot.Count;
                 if (WordsInHat == 0) 
@@ -151,13 +240,10 @@ namespace HatGameMobile.ViewModels
                     DisableMode();
                     Stage++;
 
-                    if (Stage == 4)
-                        CrossCloudFirestore.Current.Instance.DisableNetworkAsync();
-
                     Task.Run(async () =>
                     {
                         foreach (var word in doneWords)
-                            await hatCollectionRef.GetDocument(word.Content).SetDataAsync(word);
+                            await hatRef.GetDocument(word.Content).SetDataAsync(word);
                     }).ContinueWith(t => { StartCanExecute = true; });
                 }
             });
@@ -170,48 +256,84 @@ namespace HatGameMobile.ViewModels
                         Title = $"Идёт {s} этап";
                     else 
                     {
-                        Title = "Игра завершена";
+                        Title = $"Финиш -> Cчёт:{Score}";
                         DisableMode();
+                        Task.Run(async () =>
+                        {
+                            Dictionary<FieldPath, object> updates = new Dictionary<FieldPath, object>
+                            {
+                                { new FieldPath("IsActive"), false },
+                                { new FieldPath("TimerStarted"), false }
+                            };
+                            await sessionRef.GetDocument("CurrentSession")
+                                            .UpdateDataAsync(updates);
+                        });
                     }
                 });
         }
-
         private void RoundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             RoundTime -= roundTimer.Interval / 60000;
-            if (RoundTime < 0) 
-            {
-                roundTimer.Stop();
-                StopMode();
-            }
-        }
-
-        private void OnSkipExecuted()
-        {
-            if (faultTimer.ElapsedMilliseconds > 5000)
-                penalty++;
-
-            startSeq.Subscribe(s => { faultTimer.Restart(); });
+            if (RoundTime < 0)
+                roundStop.Subscribe(s => 
+                { 
+                    if (teams[currentIndex].Name != App.TeamName)
+                        DisableMode();
+                    else
+                        StopMode();
+                });
         }
         private void OnStartRoundExecuted()
         {
-            roundTimer.Start();
-
-            startSeq.Subscribe(s =>
+            roundStart.Subscribe();
+            extract.Subscribe(s =>
             {
                 faultTimer.Start();
                 PlayMode();
             });
         }
+        private void OnSkipExecuted()
+        {
+            if (faultTimer.ElapsedMilliseconds > 5000)
+                penalty++;
+            extract.Subscribe(s => { faultTimer.Restart(); });
+        }
         private void OnDoneExecuted()
         {
-            doneSeq.Subscribe(s => 
+            done.Subscribe(s => 
             {
                 Score += 1 - penalty;
                 penalty = 0;
                 if (wordsInHat > 0)
-                    startSeq.Subscribe(_ => { faultTimer.Restart(); });
+                    extract.Subscribe(_ => { faultTimer.Restart(); });
             });
+        }
+        private async void OnNavigateToRoomExecuted()
+        {
+            await NavigationService.NavigateAsync("/NavigationPage/MainPage");
+        }
+        private async void OnNavigateToMainMenuExecuted()
+        {
+            if (!isHost)
+                await teamsRef.GetDocument(App.TeamName).DeleteDocumentAsync();
+            else 
+            {
+                await sessionRef.GetDocument("CurrentSession").DeleteDocumentAsync();
+
+                var teamsRequest = await teamsRef.GetDocumentsAsync();
+                var teams = teamsRequest.Documents.Select(d => d.Id).ToList();
+                foreach (var t in teams)
+                    await teamsRef.GetDocument(t).DeleteDocumentAsync();
+
+                hatListener.Remove();
+                var hatRequest = await hatRef.GetDocumentsAsync();
+                var words = hatRequest.Documents.Select(d => d.Id).ToList();
+                foreach (var w in words)
+                    await hatRef.GetDocument(w).DeleteDocumentAsync();
+
+                await roomRef.GetDocument(App.RoomId).DeleteDocumentAsync();
+            }
+            await NavigationService.NavigateAsync("/NavigationPage/WelcomePage");
         }
         private void PlayMode() 
         {

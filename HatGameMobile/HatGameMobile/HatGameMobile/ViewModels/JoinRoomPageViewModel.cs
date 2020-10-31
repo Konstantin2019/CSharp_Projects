@@ -3,6 +3,7 @@ using Plugin.CloudFirestore;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Navigation;
+using Prism.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace HatGameMobile.ViewModels
         private string roomPassword;
         private string teamName;
         private readonly ICollectionReference roomCollectionRef;
+        private IPageDialogService dialog;
         public string RoomName
         {
             get => roomName;
@@ -34,9 +36,10 @@ namespace HatGameMobile.ViewModels
         }
         public ICommand JoinGameRoom { get; }
 
-        public JoinRoomPageViewModel(INavigationService navigationService)
+        public JoinRoomPageViewModel(INavigationService navigationService, IPageDialogService dialogService)
             : base(navigationService)
         {
+            dialog = dialogService;
             Title = "Присоединение...";
             roomCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom");
             JoinGameRoom = new DelegateCommand(async () => { await OnJoinGameRoomExecuted(); }, CanJoinGameRoomExecute)
@@ -60,20 +63,40 @@ namespace HatGameMobile.ViewModels
                 Name = RoomName,
                 Password = RoomPassword
             };
-            var request = await roomCollectionRef.GetDocumentsAsync();
-            var ids = request.Documents.Select(d => d.Id).ToList();
-            var rooms = request.ToObjects<GameRoom>().ToList();
+            var roomRequest = await roomCollectionRef.GetDocumentsAsync();
+            var ids = roomRequest.Documents.Select(d => d.Id).ToList();
+            var rooms = roomRequest.ToObjects<GameRoom>().ToList();
             var collection = ids.Zip(rooms, (key, value) => new { id = key, room = value }).ToList();
             var id = collection.Where(s => s.room.Name == inputData.Name && s.room.Password == inputData.Password)
                                .Select(s => s.id)
                                .FirstOrDefault();
             if (id != null)
             {
-                App.RoomId = id;
-                var teamsRef = roomCollectionRef.GetDocument(id).GetCollection("Teams");
-                await teamsRef.GetDocument(TeamName).SetDataAsync(new Team { Name = TeamName, Password = "" });
-                await NavigationService.NavigateAsync("MainPage");
+                var sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                                     .GetDocument(id)
+                                                                     .GetCollection("Session");
+                var sessionRequest = await sessionRef.GetDocumentsAsync();
+                var session = sessionRequest.ToObjects<Session>().FirstOrDefault();
+                if (!session.IsActive) 
+                {
+                    App.RoomId = id;
+                    var teamsRef = roomCollectionRef.GetDocument(id).GetCollection("Teams");
+                    var teamNamesRef = await teamsRef.GetDocumentsAsync();
+                    var teamNames = teamNamesRef.ToObjects<Team>().Select(t => t.Name).ToList();
+                    if (!teamNames.Contains(TeamName))
+                    {
+                        App.TeamName = TeamName;
+                        await teamsRef.GetDocument(TeamName).SetDataAsync(new Team { Name = TeamName, IsHost = false });
+                        await NavigationService.NavigateAsync("/NavigationPage/MainPage");
+                    }
+                    else
+                        await dialog.DisplayAlertAsync("Информация", "Такое имя команды уже существует!", "OK");
+                }
+                else
+                    await dialog.DisplayAlertAsync("Информация", "Игровая сессия уже запущена!", "OK");
             }
+            else
+                await dialog.DisplayAlertAsync("Информация", "Комната не найдена!", "OK");
         }
     }
 }

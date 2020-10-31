@@ -36,7 +36,6 @@
                Grid.Column="0"
                VerticalTextAlignment="Center"/>
         <Entry Text="{Binding Path=RoomPassword}"
-               IsPassword="True"
                Grid.Row="1"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>

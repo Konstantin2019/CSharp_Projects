@@ -7,7 +7,7 @@
 
     <NavigationPage.TitleView>
         <Label Text="{Binding Path=Title}" 
-               HorizontalTextAlignment="Start"
+               HorizontalTextAlignment="Center"
                FontSize="Title"
                TextColor="White"/>
     </NavigationPage.TitleView>
@@ -47,6 +47,11 @@
                          Margin="0,50,0,0"
                          ScaleY="5"
                          Progress="{Binding Path=RoundTime}"/>
+            <Button Text="Вернуться в комнату" 
+                    Margin="0,50,0,0"
+                    Command="{Binding Path=NavigateToRoom}"/>
+            <Button Text="Завершить" 
+                    Command="{Binding Path=NavigateToMainMenu}"/>
         </StackLayout>
     </ContentPage.Content>
     

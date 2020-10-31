@@ -24,6 +24,7 @@ namespace HatGameMobile.ViewModels
         private string currentWord;
         private ICollectionReference dbCollectionRef;
         private readonly ICollectionReference hatCollectionRef;
+        private readonly ICollectionReference sessionRef;
         private readonly Dictionary<string, string> comlexityDict;
         private readonly ReactiveCommand<Unit, Unit> addReactive;
         public int IntSelectedNumber
@@ -63,22 +64,46 @@ namespace HatGameMobile.ViewModels
             SelectedNumber = "5 слов";
             SelectedComplexity = "Легко";
             CanExecute = true;
+
             comlexityDict = new Dictionary<string, string>
             {
                 { "Легко", "EasyHat" },
                 { "Средне", "MediumHat" },
                 { "Сложно", "HardHat" }
             };
-            hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("Hat");
+
+            hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                                   .GetDocument(App.RoomId)
+                                                                   .GetCollection("Hat");
+            sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                             .GetDocument(App.RoomId)
+                                                             .GetCollection("Session");
             dbCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection(comlexityDict[SelectedComplexity]);
+
             AddPresetWordCommand = new DelegateCommand(OnAddPresetWordExecuted).ObservesCanExecute(() => CanExecute);
             addReactive = ReactiveCommand.CreateFromTask(_ => AddPresetWordTask());
+
             hatCollectionRef.ObserveAdded()
                             .Subscribe(documentChanged =>
                             {
                                 if (documentChanged.Document.Id == currentWord)
                                     Counter++;
                             });
+
+            sessionRef.ObserveModified()
+                      .Subscribe(change =>
+                      {
+                          var status = change.Document.ToObject<Session>();
+                          if (status.IsActive)
+                          {
+                              var dispatcher = Prism.PrismApplicationBase.Current.Dispatcher;
+                              dispatcher.BeginInvokeOnMainThread(async () => 
+                              { 
+                                  await NavigationService.NavigateAsync("/NavigationPage/PlayGamePage"); 
+                              });
+                          }
+                      });
+
             this.ObservableForProperty(p => p.IntSelectedNumber)
                 .Select(p => p.Value)
                 .Subscribe(s => 

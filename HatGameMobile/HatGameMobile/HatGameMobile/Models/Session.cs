@@ -4,9 +4,9 @@ using System.Text;
 
 namespace HatGameMobile.Models
 {
-    public class Team 
+    public class Session
     {
-        public string Name { get; set; }
-        public bool IsHost { get; set; }
+        public bool IsActive { get; set; }
+        public bool TimerStarted { get; set; }
     }
 }

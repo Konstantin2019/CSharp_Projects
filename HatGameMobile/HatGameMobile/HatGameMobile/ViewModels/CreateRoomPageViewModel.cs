@@ -78,8 +78,13 @@ namespace HatGameMobile.ViewModels
             App.TeamName = TeamName;
             await roomCollectionRef.GetDocument(id).SetDataAsync(room);
             var teamsRef = roomCollectionRef.GetDocument(id).GetCollection("Teams");
-            await teamsRef.GetDocument(TeamName).SetDataAsync(new Team { Name = TeamName, Password = "" });
-            await NavigationService.NavigateAsync("MainPage");
+            await teamsRef.GetDocument(TeamName).SetDataAsync(new Team { Name = TeamName, IsHost = true });
+            var sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                                 .GetDocument(id)
+                                                                 .GetCollection("Session");
+            await sessionRef.GetDocument("CurrentSession")
+                            .SetDataAsync(new Session { IsActive = false, TimerStarted = false });
+            await NavigationService.NavigateAsync("/NavigationPage/MainPage");
         }
         private string GeneratePassword(int length)
         {

@@ -17,8 +17,6 @@
                 Command="{Binding Path=NavigateToCustom}"/>
         <Button Text="Использовать готовые слова" 
                 Command="{Binding Path=NavigateToPreset}"/>
-        <Button Text="Выход" 
-                Command="{Binding Path=NavigateToExit}"/>
     </StackLayout>
 
 </ContentPage>
