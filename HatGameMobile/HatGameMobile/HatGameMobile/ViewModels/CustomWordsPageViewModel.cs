@@ -16,7 +16,7 @@ namespace HatGameMobile.ViewModels
         private string newWord;
         private int counter;
         private readonly ICollectionReference hatCollectionRef;
-        private readonly ICollectionReference sessionRef;
+
         public int IntSelectedNumber
         {
             get => intSelectedNumber;
@@ -47,12 +47,11 @@ namespace HatGameMobile.ViewModels
         {
             Title = "Добавь свои слова";
             SelectedNumber = "5 слов";
+
             hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
                                                                    .GetDocument(App.RoomId)
                                                                    .GetCollection("Hat");
-            sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                             .GetDocument(App.RoomId)
-                                                             .GetCollection("Session");
+
             AddCustomWordCommand = new DelegateCommand(async () => { await OnAddCustomWordExecuted(); }, CanAddCustomWordExecute)
                                                       .ObservesProperty(() => IntSelectedNumber)
                                                       .ObservesProperty(() => Counter);
@@ -63,20 +62,6 @@ namespace HatGameMobile.ViewModels
                                 if (documentChanged.Document.Id == NewWord)
                                     Counter++;
                             });
-
-            sessionRef.ObserveModified()
-                      .Subscribe(change =>
-                      {
-                          var status = change.Document.ToObject<Session>();
-                          if (status.IsActive)
-                          {
-                              var dispatcher = Prism.PrismApplicationBase.Current.Dispatcher;
-                              dispatcher.BeginInvokeOnMainThread(async () =>
-                              {
-                                  await NavigationService.NavigateAsync("/NavigationPage/PlayGamePage");
-                              });
-                          }
-                      });
         }
         private bool CanAddCustomWordExecute()
         {

@@ -21,6 +21,9 @@ namespace HatGameMobile.ViewModels
     public class PlayGamePageViewModel : ViewModelBase
     {
         private bool isHost;
+        private bool sessionIsActive;
+        private bool roundTimerIsStarted;
+        private int numberOfReadyTeams;
         private byte stage;
         private string currentWord;
         private int currentIndex;
@@ -31,6 +34,7 @@ namespace HatGameMobile.ViewModels
         private bool skipCanExecute;
         private bool doneCanExecute;
         private double roundTime;
+        private string currentTeamName;
         private readonly ICollectionReference roomRef;
         private readonly ICollectionReference hatRef;
         private readonly ICollectionReference sessionRef;
@@ -39,12 +43,26 @@ namespace HatGameMobile.ViewModels
         private List<Word> doneWords;
         private List<Team> teams;
         private readonly IObservable<Unit> extract;
-        private readonly IObservable<Unit> roundStart;
-        private readonly IObservable<Unit> roundStop;
         private readonly IObservable<Unit> done;
         private readonly Stopwatch faultTimer;
         private readonly Timer roundTimer;
         private IPageDialogService dialog;
+
+        public bool SessionIsActive
+        {
+            get => sessionIsActive;
+            set => SetProperty(ref sessionIsActive, value);
+        }
+        public bool RoundTimerIsStarted
+        {
+            get => roundTimerIsStarted;
+            set => SetProperty(ref roundTimerIsStarted, value);
+        }
+        public int NumberOfReadyTeams
+        {
+            get => numberOfReadyTeams;
+            set => SetProperty(ref numberOfReadyTeams, value);
+        }
         private byte Stage
         {
             get => stage;
@@ -85,6 +103,11 @@ namespace HatGameMobile.ViewModels
             get => roundTime;
             set => SetProperty(ref roundTime, value);
         }
+        public string CurrentTeamName 
+        {
+            get => currentTeamName;
+            set => SetProperty(ref currentTeamName, value);
+        }
         public ICommand StartRoundCommand { get; }
         public ICommand DoneCommand { get; }
         public ICommand SkipCommand { get; }
@@ -105,8 +128,10 @@ namespace HatGameMobile.ViewModels
             StartRoundCommand = new DelegateCommand(OnStartRoundExecuted).ObservesCanExecute(() => StartCanExecute);
             SkipCommand = new DelegateCommand(OnSkipExecuted).ObservesCanExecute(() => SkipCanExecute);
             DoneCommand = new DelegateCommand(OnDoneExecuted).ObservesCanExecute(() => DoneCanExecute);
-            NavigateToMainMenu = new DelegateCommand(OnNavigateToMainMenuExecuted);
-            NavigateToRoom = new DelegateCommand(OnNavigateToRoomExecuted);
+            NavigateToMainMenu = new DelegateCommand(OnNavigateToMainMenuExecuted, CanNavigateToMainMenuExecute)
+                                                    .ObservesProperty(() => SessionIsActive);
+            NavigateToRoom = new DelegateCommand(OnNavigateToRoomExecuted, CanNavigateToRoomExecute)
+                                                .ObservesProperty(() => SessionIsActive);
 
             roomRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom");
             hatRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
@@ -127,44 +152,27 @@ namespace HatGameMobile.ViewModels
                    
             Observable.FromAsync(async _ =>
             {
+                var sessionRequest = await sessionRef.GetDocumentsAsync();
+                NumberOfReadyTeams = sessionRequest.ToObjects<Session>().Select(s => s.NumberOfReadyTeams).Single();
+                NumberOfReadyTeams++;
                 var hatRequest = await hatRef.GetDocumentsAsync();
-                var teamsRequest = await teamsRef.GetDocumentsAsync();
-                return new { wordsCount = hatRequest.Count, teams = teamsRequest.ToObjects<Team>().ToList() };
+                return hatRequest.Count;
             }).Subscribe(s => 
             {
                 Title = $"Идёт {Stage} этап";
-                WordsInHat = s.wordsCount;
-                foreach (var t in s.teams) 
-                    teams.Add(t);
-                currentIndex = teams.Select(t => t.IsHost).IndexOf(true);
-                isHost = teams.Where(t => t.Name == App.TeamName).Select(t => t.IsHost).FirstOrDefault();
-                if (isHost)
-                    StopMode();
+                WordsInHat = s;
+                if (teams != null)
+                {
+                    currentIndex = teams.Select(t => t.IsHost).IndexOf(true);
+                    isHost = teams.Where(t => t.Name == App.TeamName).Select(t => t.IsHost).FirstOrDefault();
+                    CurrentTeamName = teams[currentIndex].Name;
+                    if (isHost)
+                        StopMode();
+                    else
+                        DisableMode();
+                }
                 else
-                    DisableMode();
-            });
-
-            roundStart = Observable.FromAsync(async _ =>
-            {
-                if (currentIndex == teams.Count)
-                    currentIndex = 0;
-                Dictionary<FieldPath, object> updates = new Dictionary<FieldPath, object>
-                {
-                    { new FieldPath("TimerStarted"), true }
-                };
-                await sessionRef.GetDocument("CurrentSession")
-                                .UpdateDataAsync(updates);
-            });
-
-            roundStop = Observable.FromAsync(async _ =>
-            {
-                currentIndex++;
-                Dictionary<FieldPath, object> updates = new Dictionary<FieldPath, object>
-                {
-                    { new FieldPath("TimerStarted"), false }
-                };
-                await sessionRef.GetDocument("CurrentSession")
-                                .UpdateDataAsync(updates);
+                    throw new NullReferenceException("Что то пошло не так с подпиской...");
             });
 
             extract = Observable.FromAsync(async _ => 
@@ -225,7 +233,7 @@ namespace HatGameMobile.ViewModels
                       });
 
             teamsRef.ObserveAdded()
-                    .Subscribe(t => 
+                    .Subscribe(t =>
                     {
                         var team = t.Document.ToObject<Team>();
                         if (!teams.Contains(team))
@@ -258,34 +266,100 @@ namespace HatGameMobile.ViewModels
                     {
                         Title = $"Финиш -> Cчёт:{Score}";
                         DisableMode();
-                        Task.Run(async () =>
-                        {
-                            Dictionary<FieldPath, object> updates = new Dictionary<FieldPath, object>
-                            {
-                                { new FieldPath("IsActive"), false },
-                                { new FieldPath("TimerStarted"), false }
-                            };
-                            await sessionRef.GetDocument("CurrentSession")
-                                            .UpdateDataAsync(updates);
-                        });
+                        SessionIsActive = false;
+                        RoundTimerIsStarted = false;
                     }
                 });
+
+            this.ObservableForProperty(p => p.SessionIsActive)
+                .Select(p => p.Value)
+                .Subscribe(s =>
+                {
+                    Task.Run(async () =>
+                    {
+                        await sessionRef.GetDocument("CurrentSession").UpdateDataAsync(new { IsActive = s });
+                    });
+                });
+
+            this.ObservableForProperty(p => p.RoundTimerIsStarted)
+                .Select(p => p.Value)
+                .Subscribe(s =>
+                {
+                    Task.Run(async () =>
+                    {
+                        await sessionRef.GetDocument("CurrentSession").UpdateDataAsync(new { TimerStarted = s });
+                    });
+                });
+
+            this.ObservableForProperty(p => p.NumberOfReadyTeams)
+                .Select(p => p.Value)
+                .Subscribe(s =>
+                {
+                    Task.Run(async () =>
+                    {
+                        var request = await sessionRef.GetDocumentsAsync();
+                        var numberOfReadyTeams = request.ToObjects<Session>().Select(r => r.NumberOfReadyTeams).Single();
+                        numberOfReadyTeams += s;
+                        await sessionRef.GetDocument("CurrentSession").UpdateDataAsync(new { NumberOfReadyTeams = numberOfReadyTeams });
+                    });
+                });
+
         }
+        private bool CanNavigateToRoomExecute()
+        {
+            if (SessionIsActive)
+                return false;
+            else
+                return true;
+        }
+        private bool CanNavigateToMainMenuExecute()
+        {
+            if (SessionIsActive) 
+            {
+                if (isHost)
+                    return true;
+                else
+                    return false;
+            }
+            else
+                return true;
+        }
+
         private void RoundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             RoundTime -= roundTimer.Interval / 60000;
-            if (RoundTime < 0)
-                roundStop.Subscribe(s => 
-                { 
-                    if (teams[currentIndex].Name != App.TeamName)
-                        DisableMode();
-                    else
-                        StopMode();
-                });
+            if (RoundTime < 0) 
+            {
+                RoundTime = 1;
+                if (currentIndex < teams.Count - 1)
+                    currentIndex++;
+                RoundTimerIsStarted = false;
+                CurrentTeamName = teams[currentIndex].Name;
+                if (CurrentTeamName != App.TeamName)
+                    DisableMode();
+                else
+                    StopMode();
+            }
         }
         private void OnStartRoundExecuted()
         {
-            roundStart.Subscribe();
+            if (!SessionIsActive)
+                SessionIsActive = true;
+            if (NumberOfReadyTeams != teams.Count)
+            {
+                sessionIsActive = false;
+                var dispatcher = Prism.PrismApplicationBase.Current.Dispatcher;
+                dispatcher.BeginInvokeOnMainThread(async () =>
+                {
+                    await dialog.DisplayAlertAsync("Информация", "Не все команды готовы!", "OK");
+                });
+            }
+            else
+            {
+                if (currentIndex == teams.Count)
+                    currentIndex = 0;
+                RoundTimerIsStarted = true;
+            }
             extract.Subscribe(s =>
             {
                 faultTimer.Start();
@@ -310,14 +384,21 @@ namespace HatGameMobile.ViewModels
         }
         private async void OnNavigateToRoomExecuted()
         {
+            NumberOfReadyTeams += -2;
             await NavigationService.NavigateAsync("/NavigationPage/MainPage");
         }
         private async void OnNavigateToMainMenuExecuted()
         {
-            if (!isHost)
+            if (!isHost) 
+            {
+                await NavigationService.NavigateAsync("/NavigationPage/WelcomePage");
+                NumberOfReadyTeams += -2;
                 await teamsRef.GetDocument(App.TeamName).DeleteDocumentAsync();
+            }
             else 
             {
+                await NavigationService.NavigateAsync("/NavigationPage/WelcomePage");
+
                 await sessionRef.GetDocument("CurrentSession").DeleteDocumentAsync();
 
                 var teamsRequest = await teamsRef.GetDocumentsAsync();
@@ -333,7 +414,6 @@ namespace HatGameMobile.ViewModels
 
                 await roomRef.GetDocument(App.RoomId).DeleteDocumentAsync();
             }
-            await NavigationService.NavigateAsync("/NavigationPage/WelcomePage");
         }
         private void PlayMode() 
         {

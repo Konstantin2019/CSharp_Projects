@@ -83,7 +83,7 @@ namespace HatGameMobile.ViewModels
                                                                  .GetDocument(id)
                                                                  .GetCollection("Session");
             await sessionRef.GetDocument("CurrentSession")
-                            .SetDataAsync(new Session { IsActive = false, TimerStarted = false });
+                            .SetDataAsync(new Session { IsActive = false, TimerStarted = false, NumberOfReadyTeams = 0 });
             await NavigationService.NavigateAsync("/NavigationPage/MainPage");
         }
         private string GeneratePassword(int length)

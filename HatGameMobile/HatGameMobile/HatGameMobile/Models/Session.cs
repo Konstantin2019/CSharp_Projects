@@ -8,5 +8,6 @@ namespace HatGameMobile.Models
     {
         public bool IsActive { get; set; }
         public bool TimerStarted { get; set; }
+        public int NumberOfReadyTeams { get; set; }
     }
 }

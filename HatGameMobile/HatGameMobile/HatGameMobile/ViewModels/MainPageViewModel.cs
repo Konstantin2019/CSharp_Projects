@@ -14,7 +14,6 @@ namespace HatGameMobile.ViewModels
     public class MainPageViewModel : ViewModelBase
     {
         private readonly ICollectionReference hatCollectionRef;
-        private readonly ICollectionReference sessionRef;
         private bool playCanExecute;
 
         public bool PlayCanExecute
@@ -40,20 +39,6 @@ namespace HatGameMobile.ViewModels
             hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
                                                                    .GetDocument(App.RoomId)
                                                                    .GetCollection("Hat");
-            sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                             .GetDocument(App.RoomId)
-                                                             .GetCollection("Session");
-
-            sessionRef.ObserveModified()
-                      .Subscribe(change => 
-                      {
-                          var status = change.Document.ToObject<Session>();
-                          if (status.IsActive) 
-                          {
-                              var dispatcher = Prism.PrismApplicationBase.Current.Dispatcher;
-                              dispatcher.BeginInvokeOnMainThread(() => OnNavigateToPlayExecuted());
-                          }
-                      });
 
             hatCollectionRef.AddSnapshotListener((snapshot, error) =>
             {

@@ -24,7 +24,6 @@ namespace HatGameMobile.ViewModels
         private string currentWord;
         private ICollectionReference dbCollectionRef;
         private readonly ICollectionReference hatCollectionRef;
-        private readonly ICollectionReference sessionRef;
         private readonly Dictionary<string, string> comlexityDict;
         private readonly ReactiveCommand<Unit, Unit> addReactive;
         public int IntSelectedNumber
@@ -75,9 +74,6 @@ namespace HatGameMobile.ViewModels
             hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
                                                                    .GetDocument(App.RoomId)
                                                                    .GetCollection("Hat");
-            sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                             .GetDocument(App.RoomId)
-                                                             .GetCollection("Session");
             dbCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection(comlexityDict[SelectedComplexity]);
 
             AddPresetWordCommand = new DelegateCommand(OnAddPresetWordExecuted).ObservesCanExecute(() => CanExecute);
@@ -89,20 +85,6 @@ namespace HatGameMobile.ViewModels
                                 if (documentChanged.Document.Id == currentWord)
                                     Counter++;
                             });
-
-            sessionRef.ObserveModified()
-                      .Subscribe(change =>
-                      {
-                          var status = change.Document.ToObject<Session>();
-                          if (status.IsActive)
-                          {
-                              var dispatcher = Prism.PrismApplicationBase.Current.Dispatcher;
-                              dispatcher.BeginInvokeOnMainThread(async () => 
-                              { 
-                                  await NavigationService.NavigateAsync("/NavigationPage/PlayGamePage"); 
-                              });
-                          }
-                      });
 
             this.ObservableForProperty(p => p.IntSelectedNumber)
                 .Select(p => p.Value)
