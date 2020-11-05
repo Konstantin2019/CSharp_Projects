@@ -23,7 +23,7 @@
             <ColumnDefinition Width="40*"/>
             <ColumnDefinition Width="60*"/>
         </Grid.ColumnDefinitions>
-        <Label Text="Имя комнаты : "
+        <Label Text="Room name : "
                Grid.Row="0"
                Grid.Column="0"
                VerticalTextAlignment="Center"/>
@@ -31,7 +31,7 @@
                Grid.Row="0"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>
-        <Label Text="Пароль : "
+        <Label Text="Password : "
                Grid.Row="1"
                Grid.Column="0"
                VerticalTextAlignment="Center"/>
@@ -39,7 +39,7 @@
                Grid.Row="1"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>
-        <Label Text="Имя команды : "
+        <Label Text="Team name : "
                Grid.Row="2"
                Grid.Column="0"
                VerticalTextAlignment="Center"/>
@@ -47,7 +47,7 @@
                Grid.Row="2"
                Grid.Column="1"
                VerticalTextAlignment="Center"/>
-        <Button Text="Присоединиться к комнате"
+        <Button Text="Join room"
                 Command="{Binding Path=JoinGameRoom}"
                 Grid.Row="3"
                 Grid.ColumnSpan="2"/>

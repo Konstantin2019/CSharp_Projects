@@ -11,11 +11,11 @@
     </NavigationPage.TitleView>
 
     <StackLayout Margin="{StaticResource Key=PageMargin}">
-        <Button Text="Начать игру" 
+        <Button Text="Start game" 
                 Command="{Binding Path=NavigateToPlay}"/>
-        <Button Text="Собрать свою шляпу" 
+        <Button Text="Create custom hat" 
                 Command="{Binding Path=NavigateToCustom}"/>
-        <Button Text="Использовать готовые слова" 
+        <Button Text="Create preset hat" 
                 Command="{Binding Path=NavigateToPreset}"/>
     </StackLayout>
 

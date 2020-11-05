@@ -27,7 +27,7 @@
                         Command="{Binding Path=SkipCommand}"/>
                 <Button Text="Угадано" 
                         Padding="5"
-                        Command="{Binding Path=DoneCommand}"/>
+                        Command="{Binding Path=GuessedCommand}"/>
             </StackLayout>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">

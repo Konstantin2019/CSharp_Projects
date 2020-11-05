@@ -1,10 +1,7 @@
 ﻿using Prism.Commands;
-using Prism.Mvvm;
 using Prism.Navigation;
-using System;
-using System.Collections.Generic;
+using Prism.Services;
 using System.Diagnostics;
-using System.Linq;
 using System.Windows.Input;
 
 namespace HatGameMobile.ViewModels
@@ -15,10 +12,10 @@ namespace HatGameMobile.ViewModels
         public ICommand NavigateToJoinRoom { get; }
         public ICommand NavigateToQuitGame { get; }
 
-        public WelcomePageViewModel(INavigationService navigationService)
-            : base(navigationService)
+        public WelcomePageViewModel(INavigationService navigationService, IPageDialogService dialogService)
+            : base(navigationService, dialogService)
         {
-            Title = "Игра **Шляпа**";
+            Title = "#HAT GAME#";
 
             NavigateToCreateRoom = new DelegateCommand(OnNavigateToCreateRoomExecuted);
             NavigateToJoinRoom = new DelegateCommand(OnNavigateToJoinRoomExecuted);

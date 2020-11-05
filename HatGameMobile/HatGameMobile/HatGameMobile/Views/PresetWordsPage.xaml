@@ -14,32 +14,32 @@
 
     <ContentPage.Content>
         <StackLayout Margin="{StaticResource Key=PageMargin}">
-            <Label Text="Сколько слов будет в шляпе?"
+            <Label Text="How many words will be?"
                    HorizontalTextAlignment="Center"/>
             <Picker SelectedItem="{Binding Path=SelectedNumber}">
                 <Picker.ItemsSource>
                     <x:Array Type="{x:Type x:String}">
-                        <x:String>5 слов</x:String>
-                        <x:String>7 слов</x:String>
-                        <x:String>10 слов</x:String>
+                        <x:String>5 words</x:String>
+                        <x:String>7 words</x:String>
+                        <x:String>10 words</x:String>
                     </x:Array>
                 </Picker.ItemsSource>
             </Picker>
-            <Label Text="Выберите уровень сложности слов"
+            <Label Text="Choose complexity level"
                    HorizontalTextAlignment="Center"/>
             <Picker SelectedItem="{Binding Path=SelectedComplexity}">
                 <Picker.ItemsSource>
                     <x:Array Type="{x:Type x:String}">
-                        <x:String>Легко</x:String>
-                        <x:String>Средне</x:String>
-                        <x:String>Сложно</x:String>
+                        <x:String>Easy</x:String>
+                        <x:String>Medium</x:String>
+                        <x:String>Hard</x:String>
                     </x:Array>
                 </Picker.ItemsSource>
             </Picker>
-            <Button Text="Добавить"
+            <Button Text="Add preset words"
                     Command="{Binding Path=AddPresetWordCommand}"/>
             <StackLayout Orientation="Horizontal">
-                <Label Text="Слов добавлено:"/>
+                <Label Text="Number of added words :"/>
                 <Label Text="{Binding Path=Counter}"/>
             </StackLayout>
         </StackLayout>

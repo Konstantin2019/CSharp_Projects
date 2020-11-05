@@ -1,12 +1,10 @@
 ﻿using HatGameMobile.Models;
 using Plugin.CloudFirestore;
-using Plugin.CloudFirestore.Extensions;
 using Prism.Commands;
-using Prism.Mvvm;
 using Prism.Navigation;
+using Prism.Services;
 using ReactiveUI;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -20,7 +18,6 @@ namespace HatGameMobile.ViewModels
         private string roomPassword;
         private bool autoPaswwordGen;
         private string teamName;
-        private readonly ICollectionReference roomCollectionRef;
         public string RoomName
         {
             get => roomName;
@@ -42,12 +39,11 @@ namespace HatGameMobile.ViewModels
             set => SetProperty(ref teamName, value);
         }
         public ICommand CreateGameRoom { get; }
-        public CreateRoomPageViewModel(INavigationService navigationService)
-            :base(navigationService)
+        public CreateRoomPageViewModel(INavigationService navigationService, IPageDialogService dialogService)
+            :base(navigationService, dialogService)
         {
-            Title = "Создание...";
+            Title = "Creating...";
 
-            roomCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom");
             CreateGameRoom = new DelegateCommand(async () => { await OnCreateGameRoomExecuted(); }, CanCreateGameRoomExecute)
                                                 .ObservesProperty(() => RoomName)
                                                 .ObservesProperty(() => RoomPassword)
@@ -75,14 +71,18 @@ namespace HatGameMobile.ViewModels
             };
             var id = await GenerateId();
             App.RoomId = id;
+            App.IsHost = true;
             App.TeamName = TeamName;
-            await roomCollectionRef.GetDocument(id).SetDataAsync(room);
-            var teamsRef = roomCollectionRef.GetDocument(id).GetCollection("Teams");
-            await teamsRef.GetDocument(TeamName).SetDataAsync(new Team { Name = TeamName, IsHost = true });
-            var sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                                 .GetDocument(id)
-                                                                 .GetCollection("Session");
-            await sessionRef.GetDocument("CurrentSession")
+            await RoomRef.GetDocument(id)
+                         .SetDataAsync(room);
+            TeamsRef = RoomRef.GetDocument(id)
+                              .GetCollection("Teams");
+            await TeamsRef.GetDocument(TeamName)
+                          .SetDataAsync(new Team { Name = TeamName, IsHost = true });
+            SessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                             .GetDocument(id)
+                                                             .GetCollection("Session");
+            await SessionRef.GetDocument("CurrentSession")
                             .SetDataAsync(new Session { IsActive = false, TimerStarted = false, NumberOfReadyTeams = 0 });
             await NavigationService.NavigateAsync("/NavigationPage/MainPage");
         }
@@ -94,7 +94,7 @@ namespace HatGameMobile.ViewModels
         private async Task<string> GenerateId() 
         {
             string code = null;
-            var request = await roomCollectionRef.GetDocumentsAsync();
+            var request = await RoomRef.GetDocumentsAsync();
             var ids = request.Documents.Select(d => d.Id).ToList();
             var notUnique = true;
             while (notUnique)

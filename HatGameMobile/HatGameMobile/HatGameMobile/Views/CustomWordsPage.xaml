@@ -14,23 +14,23 @@
 
     <ContentPage.Content>
         <StackLayout Margin="{StaticResource Key=PageMargin}">
-            <Label Text="Сколько слов будет в шляпе?"
+            <Label Text="How many words will be?"
                    HorizontalTextAlignment="Center"/>
             <Picker SelectedItem="{Binding Path=SelectedNumber}">
                 <Picker.ItemsSource>
                     <x:Array Type="{x:Type x:String}">
-                        <x:String>5 слов</x:String>
-                        <x:String>7 слов</x:String>
-                        <x:String>10 слов</x:String>
+                        <x:String>5 words</x:String>
+                        <x:String>7 words</x:String>
+                        <x:String>10 words</x:String>
                     </x:Array>
                 </Picker.ItemsSource>
             </Picker>
-            <Entry Placeholder="Введите слово"
+            <Entry Placeholder="Input your word"
                    Text="{Binding Path=NewWord}"/>
-            <Button Text="Добавить" 
+            <Button Text="Add custom word" 
                     Command="{Binding Path=AddCustomWordCommand}"/>
             <StackLayout Orientation="Horizontal">
-                <Label Text="Слов добавлено:"/>
+                <Label Text="Number of added words :"/>
                 <Label Text="{Binding Path=Counter}"/>
             </StackLayout>
         </StackLayout>

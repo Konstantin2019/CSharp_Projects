@@ -1,11 +1,12 @@
 ﻿using HatGameMobile.Models;
-using Plugin.CloudFirestore;
 using Plugin.CloudFirestore.Extensions;
 using Prism.Commands;
 using Prism.Navigation;
 using System.Reactive.Linq;
 using System;
 using System.Threading.Tasks;
+using Prism.Services;
+using System.Collections.Generic;
 
 namespace HatGameMobile.ViewModels
 {
@@ -15,7 +16,7 @@ namespace HatGameMobile.ViewModels
         private int intSelectedNumber;
         private string newWord;
         private int counter;
-        private readonly ICollectionReference hatCollectionRef;
+        private List<Word> addedWords;
 
         public int IntSelectedNumber
         {
@@ -42,47 +43,61 @@ namespace HatGameMobile.ViewModels
             set => SetProperty(ref counter, value);
         }
         public DelegateCommand AddCustomWordCommand { get; }
-        public CustomWordsPageViewModel(INavigationService navigationService)
-            : base(navigationService)
+        public CustomWordsPageViewModel(INavigationService navigationService, IPageDialogService dialogService)
+            : base(navigationService, dialogService)
         {
-            Title = "Добавь свои слова";
-            SelectedNumber = "5 слов";
-
-            hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                                   .GetDocument(App.RoomId)
-                                                                   .GetCollection("Hat");
+            Title = "Add custom words...";
+            SelectedNumber = "5 words";
+            addedWords = new List<Word>();
 
             AddCustomWordCommand = new DelegateCommand(async () => { await OnAddCustomWordExecuted(); }, CanAddCustomWordExecute)
                                                       .ObservesProperty(() => IntSelectedNumber)
                                                       .ObservesProperty(() => Counter);
 
-            hatCollectionRef.ObserveAdded()
-                            .Subscribe(documentChanged => 
-                            {
-                                if (documentChanged.Document.Id == NewWord)
-                                    Counter++;
-                            });
+            HatRef.ObserveAdded()
+                  .Subscribe(documentChanged => 
+                  {
+                      if (documentChanged.Document.Id == NewWord)
+                          Counter++;
+                  });
         }
         private bool CanAddCustomWordExecute()
         {
             if (Counter < IntSelectedNumber)
             {
-                Title = "Добавь свои слова";
+                Title = "Add custom words...";
                 return true;
             }
             else 
             {
-                Title = "Успешно выполнено";
+                Title = "Successfully done";
                 NewWord = null;
                 return false;
             }
         }
         private async Task OnAddCustomWordExecuted()
         {
-            var word = new Word { Content = NewWord };
-            if (word.Content != null)
-                await hatCollectionRef.GetDocument(word.Content).SetDataAsync(word);
+            var customWord = new Word { Content = NewWord };
+            if (customWord.Content != null) 
+            {
+                await HatRef.GetDocument(customWord.Content)
+                            .SetDataAsync(customWord);
+                addedWords.Add(customWord);
+            }
             NewWord = null;
+        }
+        protected override async Task RemoveFromFireStore(bool isHost)
+        {
+            if (!App.IsHost) 
+            {
+                foreach (var word in addedWords)
+                {
+                    await HatRef.GetDocument(word.Content)
+                                .DeleteDocumentAsync();
+                }
+            }
+
+            await base.RemoveFromFireStore(isHost);
         }
     }
 }

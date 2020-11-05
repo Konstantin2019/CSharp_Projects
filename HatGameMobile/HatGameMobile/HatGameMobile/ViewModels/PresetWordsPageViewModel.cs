@@ -1,9 +1,9 @@
 ﻿using HatGameMobile.Models;
-using ImTools;
 using Plugin.CloudFirestore;
 using Plugin.CloudFirestore.Extensions;
 using Prism.Commands;
 using Prism.Navigation;
+using Prism.Services;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
@@ -22,8 +22,8 @@ namespace HatGameMobile.ViewModels
         private int counter;
         private bool canExecute;
         private string currentWord;
-        private ICollectionReference dbCollectionRef;
-        private readonly ICollectionReference hatCollectionRef;
+        private List<Word> addedWords;
+        private ICollectionReference presetDBRef;
         private readonly Dictionary<string, string> comlexityDict;
         private readonly ReactiveCommand<Unit, Unit> addReactive;
         public int IntSelectedNumber
@@ -56,35 +56,33 @@ namespace HatGameMobile.ViewModels
             set => SetProperty(ref canExecute, value);
         }
         public DelegateCommand AddPresetWordCommand { get; }
-        public PresetWordsPageViewModel(INavigationService navigationService)
-            : base(navigationService)
+        public PresetWordsPageViewModel(INavigationService navigationService, IPageDialogService dialogService)
+            : base(navigationService, dialogService)
         {
-            Title = "Добавь готовые слова";
-            SelectedNumber = "5 слов";
-            SelectedComplexity = "Легко";
+            Title = "Add preset words";
+            SelectedNumber = "5 words";
+            SelectedComplexity = "Easy";
             CanExecute = true;
 
             comlexityDict = new Dictionary<string, string>
             {
-                { "Легко", "EasyHat" },
-                { "Средне", "MediumHat" },
-                { "Сложно", "HardHat" }
+                { "Easy", "EasyHat" },
+                { "Medium", "MediumHat" },
+                { "Hard", "HardHat" }
             };
+            addedWords = new List<Word>();
 
-            hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                                   .GetDocument(App.RoomId)
-                                                                   .GetCollection("Hat");
-            dbCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection(comlexityDict[SelectedComplexity]);
+            presetDBRef = CrossCloudFirestore.Current.Instance.GetCollection(comlexityDict[SelectedComplexity]);
 
             AddPresetWordCommand = new DelegateCommand(OnAddPresetWordExecuted).ObservesCanExecute(() => CanExecute);
             addReactive = ReactiveCommand.CreateFromTask(_ => AddPresetWordTask());
 
-            hatCollectionRef.ObserveAdded()
-                            .Subscribe(documentChanged =>
-                            {
-                                if (documentChanged.Document.Id == currentWord)
-                                    Counter++;
-                            });
+            HatRef.ObserveAdded()
+                  .Subscribe(documentChanged =>
+                  {
+                      if (documentChanged.Document.Id == currentWord)
+                          Counter++;
+                  });
 
             this.ObservableForProperty(p => p.IntSelectedNumber)
                 .Select(p => p.Value)
@@ -92,33 +90,48 @@ namespace HatGameMobile.ViewModels
                 {
                     if (s > Counter) 
                     {
-                        Title = "Добавь готовые слова";
+                        Title = "Add preset words";
                         CanExecute = true;
                     }
                 });
         }
         private void OnAddPresetWordExecuted()
         {
-            addReactive.Execute().Subscribe(s => { if (Counter == IntSelectedNumber) Title = "Успешно выполнено"; });
-            addReactive.IsExecuting.Subscribe(IsExecuting => { if (IsExecuting) Title = "В процессе..."; });
+            addReactive.Execute().Subscribe(s => { if (Counter == IntSelectedNumber) Title = "Successfully done"; });
+            addReactive.IsExecuting.Subscribe(IsExecuting => { if (IsExecuting) Title = "In process..."; });
             addReactive.CanExecute.Subscribe(CanExecute => { this.CanExecute = false; });
         }
         private async Task AddPresetWordTask()
         {
-            dbCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection(comlexityDict[SelectedComplexity]);
-            var dbCollection = await dbCollectionRef.GetDocumentsAsync();
-            var words = dbCollection.ToObjects<Word>().ToList();
-            if (words != null)
+            presetDBRef = CrossCloudFirestore.Current.Instance.GetCollection(comlexityDict[SelectedComplexity]);
+            var presetCollection = await presetDBRef.GetDocumentsAsync();
+            var presetWords = presetCollection.ToObjects<Word>().ToList();
+            if (presetWords != null)
             {
                 var rnd = new Random();
                 while (Counter < IntSelectedNumber)
                 {
-                    var randIndex = rnd.Next(words.Count);
-                    var word = words[randIndex];
+                    var randIndex = rnd.Next(presetWords.Count);
+                    var word = presetWords[randIndex];
                     currentWord = word.Content;
-                    await hatCollectionRef.GetDocument(currentWord).SetDataAsync(word);
+                    await HatRef.GetDocument(currentWord)
+                                .SetDataAsync(word);
+                    addedWords.Add(word);
                 }
             }
+        }
+        protected override async Task RemoveFromFireStore(bool isHost)
+        {
+            if (!App.IsHost) 
+            {
+                foreach (var word in addedWords)
+                {
+                    await HatRef.GetDocument(word.Content)
+                                .DeleteDocumentAsync();
+                }
+            }
+
+            await base.RemoveFromFireStore(isHost);
         }
     }
 }

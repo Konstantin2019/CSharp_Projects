@@ -1,11 +1,8 @@
 ﻿using HatGameMobile.Models;
 using Plugin.CloudFirestore;
 using Prism.Commands;
-using Prism.Mvvm;
 using Prism.Navigation;
 using Prism.Services;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -17,8 +14,6 @@ namespace HatGameMobile.ViewModels
         private string roomName;
         private string roomPassword;
         private string teamName;
-        private readonly ICollectionReference roomCollectionRef;
-        private IPageDialogService dialog;
         public string RoomName
         {
             get => roomName;
@@ -37,11 +32,9 @@ namespace HatGameMobile.ViewModels
         public ICommand JoinGameRoom { get; }
 
         public JoinRoomPageViewModel(INavigationService navigationService, IPageDialogService dialogService)
-            : base(navigationService)
+            : base(navigationService, dialogService)
         {
-            dialog = dialogService;
-            Title = "Присоединение...";
-            roomCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom");
+            Title = "Joining...";
             JoinGameRoom = new DelegateCommand(async () => { await OnJoinGameRoomExecuted(); }, CanJoinGameRoomExecute)
                                                 .ObservesProperty(() => RoomName)
                                                 .ObservesProperty(() => RoomPassword)
@@ -63,7 +56,7 @@ namespace HatGameMobile.ViewModels
                 Name = RoomName,
                 Password = RoomPassword
             };
-            var roomRequest = await roomCollectionRef.GetDocumentsAsync();
+            var roomRequest = await RoomRef.GetDocumentsAsync();
             var ids = roomRequest.Documents.Select(d => d.Id).ToList();
             var rooms = roomRequest.ToObjects<GameRoom>().ToList();
             var collection = ids.Zip(rooms, (key, value) => new { id = key, room = value }).ToList();
@@ -72,31 +65,35 @@ namespace HatGameMobile.ViewModels
                                .FirstOrDefault();
             if (id != null)
             {
-                var sessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                                     .GetDocument(id)
-                                                                     .GetCollection("Session");
-                var sessionRequest = await sessionRef.GetDocumentsAsync();
+                SessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
+                                                                 .GetDocument(id)
+                                                                 .GetCollection("Session");
+                var sessionRequest = await SessionRef.GetDocumentsAsync();
                 var session = sessionRequest.ToObjects<Session>().FirstOrDefault();
                 if (!session.IsActive) 
                 {
                     App.RoomId = id;
-                    var teamsRef = roomCollectionRef.GetDocument(id).GetCollection("Teams");
-                    var teamNamesRef = await teamsRef.GetDocumentsAsync();
+                    App.IsHost = false;
+                    TeamsRef = RoomRef.GetDocument(id)
+                                      .GetCollection("Teams");
+                    var teamNamesRef = await TeamsRef.GetDocumentsAsync();
                     var teamNames = teamNamesRef.ToObjects<Team>().Select(t => t.Name).ToList();
                     if (!teamNames.Contains(TeamName))
                     {
                         App.TeamName = TeamName;
-                        await teamsRef.GetDocument(TeamName).SetDataAsync(new Team { Name = TeamName, IsHost = false });
+                        await TeamsRef.GetDocument(TeamName)
+                                      .SetDataAsync(new Team { Name = TeamName, IsHost = false });
+
                         await NavigationService.NavigateAsync("/NavigationPage/MainPage");
                     }
                     else
-                        await dialog.DisplayAlertAsync("Информация", "Такое имя команды уже существует!", "OK");
+                        await DialogService.DisplayAlertAsync("Information", "Team not found!", "OK");
                 }
                 else
-                    await dialog.DisplayAlertAsync("Информация", "Игровая сессия уже запущена!", "OK");
+                    await DialogService.DisplayAlertAsync("Information", "Game session started!", "OK");
             }
             else
-                await dialog.DisplayAlertAsync("Информация", "Комната не найдена!", "OK");
+                await DialogService.DisplayAlertAsync("Information", "Game room not found!", "OK");
         }
     }
 }

@@ -1,19 +1,13 @@
-﻿using DynamicData;
-using Plugin.CloudFirestore;
-using Plugin.CloudFirestore.Extensions;
-using Prism.Commands;
+﻿using Prism.Commands;
 using Prism.Navigation;
-using System.Reactive.Linq;
-using System;
-using System.Diagnostics;
 using System.Windows.Input;
-using HatGameMobile.Models;
+using Prism.AppModel;
+using Prism.Services;
 
 namespace HatGameMobile.ViewModels
 {
-    public class MainPageViewModel : ViewModelBase
+    public class MainPageViewModel : ViewModelBase, IApplicationLifecycleAware
     {
-        private readonly ICollectionReference hatCollectionRef;
         private bool playCanExecute;
 
         public bool PlayCanExecute
@@ -26,8 +20,8 @@ namespace HatGameMobile.ViewModels
         public ICommand NavigateToCustom { get; }
         public ICommand NavigateToPreset { get; }
 
-        public MainPageViewModel(INavigationService navigationService)
-            : base(navigationService)
+        public MainPageViewModel(INavigationService navigationService, IPageDialogService dialogService)
+            : base(navigationService, dialogService)
         {
             Title = App.RoomId;
             PlayCanExecute = false;
@@ -36,11 +30,7 @@ namespace HatGameMobile.ViewModels
             NavigateToCustom = new DelegateCommand(OnNavigateToCustomExecuted);
             NavigateToPreset = new DelegateCommand(OnNavigateToPresetExecuted);
 
-            hatCollectionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                                   .GetDocument(App.RoomId)
-                                                                   .GetCollection("Hat");
-
-            hatCollectionRef.AddSnapshotListener((snapshot, error) =>
+            HatRef.AddSnapshotListener((snapshot, error) =>
             {
                 if (snapshot.Count < 10)
                     PlayCanExecute = false;

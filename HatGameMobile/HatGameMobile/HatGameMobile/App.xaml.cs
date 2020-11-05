@@ -18,6 +18,7 @@ namespace HatGameMobile
          * App(IPlatformInitializer initializer = null) cannot be handled by the Activator.
          */
         public static string RoomId { get; set; }
+        public static bool IsHost { get; set; }
         public static string TeamName { get; set; }
         public App() : this(null) { }
         public App(IPlatformInitializer initializer) : base(initializer) { }
