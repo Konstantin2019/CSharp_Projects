@@ -14,7 +14,7 @@
 
     <ContentPage.Content>
         <StackLayout Margin="{StaticResource Key=PageMargin}">
-            <Button Text="Начать раунд"
+            <Button Text="Start round"
                     Padding="5"
                     Command="{Binding Path=StartRoundCommand}"/>
             <Label Text="{Binding Path=CurrentWord}" 
@@ -22,23 +22,23 @@
                    FontSize="Large"/>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">
-                <Button Text="Пропустить" 
+                <Button Text="Skip" 
                         Padding="5"
                         Command="{Binding Path=SkipCommand}"/>
-                <Button Text="Угадано" 
+                <Button Text="Guessed" 
                         Padding="5"
                         Command="{Binding Path=GuessedCommand}"/>
             </StackLayout>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">
-                <Label Text="Текущий счёт:"
+                <Label Text="Current score:"
                        HorizontalTextAlignment="Start"/>
                 <Label Text="{Binding Path=Score}"
                        HorizontalTextAlignment="End"/>
             </StackLayout>
             <StackLayout Orientation="Horizontal"
                          HorizontalOptions="CenterAndExpand">
-                <Label Text="Слов в шляпе:"
+                <Label Text="Words in hat:"
                        HorizontalTextAlignment="Start"/>
                 <Label Text="{Binding Path=WordsInHat}"
                        HorizontalTextAlignment="End"/>
@@ -46,16 +46,16 @@
             <StackLayout Orientation="Horizontal"
                          Margin="0,50,0,0"
                          HorizontalOptions="CenterAndExpand">
-                <Label Text="Ход команды : "/>
+                <Label Text="Team turn: "/>
                 <Label Text="{Binding Path=CurrentTeamName}"/>
             </StackLayout>
             <ProgressBar ProgressColor="ForestGreen"
                          Margin="0,0,0,50"
                          ScaleY="5"
                          Progress="{Binding Path=RoundTime}"/>
-            <Button Text="Вернуться в комнату" 
+            <Button Text="Go back to room" 
                     Command="{Binding Path=NavigateToRoom}"/>
-            <Button Text="Завершить" 
+            <Button Text="Go to home page" 
                     Command="{Binding Path=NavigateToMainMenu}"/>
         </StackLayout>
     </ContentPage.Content>

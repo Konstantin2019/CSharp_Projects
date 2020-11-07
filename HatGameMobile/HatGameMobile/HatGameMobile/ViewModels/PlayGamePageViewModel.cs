@@ -341,7 +341,7 @@ namespace HatGameMobile.ViewModels
             {
                 dispatcher.BeginInvokeOnMainThread(async () =>
                 {
-                    var answer = await DialogService.DisplayAlertAsync("Question", $"Нas the last word been guessed?", "YES", "NO");
+                    var answer = await DialogService.DisplayAlertAsync("Question", $"Is the last word guessed?", "YES", "NO");
                     if (answer) OnGuessedExecuted();
                 });
 
