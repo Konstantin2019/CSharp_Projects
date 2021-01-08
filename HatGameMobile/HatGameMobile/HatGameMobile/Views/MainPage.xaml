@@ -17,6 +17,9 @@
                 Command="{Binding Path=NavigateToCustom}"/>
         <Button Text="Create preset hat" 
                 Command="{Binding Path=NavigateToPreset}"/>
+        <Button Text="Share room"
+                Margin="0,200,0,0"
+                Command="{Binding Path=Share}"/>
     </StackLayout>
 
 </ContentPage>

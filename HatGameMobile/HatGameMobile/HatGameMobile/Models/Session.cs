@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace HatGameMobile.Models
+﻿namespace HatGameMobile.Models
 {
     public class Session
     {

@@ -1,5 +1,7 @@
 ﻿using HatGameMobile.Models;
+using HatGameMobile.Models.Services;
 using Plugin.CloudFirestore;
+using Plugin.CloudFirestore.Extensions;
 using Prism.Commands;
 using Prism.Navigation;
 using Prism.Services;
@@ -18,6 +20,8 @@ namespace HatGameMobile.ViewModels
         private string roomPassword;
         private bool autoPaswwordGen;
         private string teamName;
+        private bool success;
+        private GameRoom room;
         public string RoomName
         {
             get => roomName;
@@ -43,6 +47,7 @@ namespace HatGameMobile.ViewModels
             :base(navigationService, dialogService)
         {
             Title = "Creating...";
+            success = false;
 
             CreateGameRoom = new DelegateCommand(async () => { await OnCreateGameRoomExecuted(); }, CanCreateGameRoomExecute)
                                                 .ObservesProperty(() => RoomName)
@@ -50,7 +55,14 @@ namespace HatGameMobile.ViewModels
                                                 .ObservesProperty(() => TeamName);
             this.ObservableForProperty(p => p.AutoPasswordGen)
                 .Select(p => p.Value)
-                .Subscribe(s => { if (s) RoomPassword = GeneratePassword(8); });
+                .Subscribe(s => { if (s) RoomPassword = Helper.GeneratePassword(8); });
+
+            RoomRef.ObserveAdded()
+                   .Subscribe(r =>
+                    {
+                        if (room != null && r.Document.Id == room.Id)
+                            success = true;
+                    });
         }
 
         private bool CanCreateGameRoomExecute()
@@ -64,45 +76,37 @@ namespace HatGameMobile.ViewModels
         }
         private async Task OnCreateGameRoomExecuted()
         {
-            var room = new GameRoom
+            room = new GameRoom
             {
                 Name = RoomName,
-                Password = RoomPassword
+                Password = RoomPassword, 
             };
-            var id = await GenerateId();
-            App.RoomId = id;
+
+            while (!success)
+            {
+                room.Id = room.Name + "_" + Helper.GeneratePassword(5);
+                await RoomRef.GetDocument(room.Id).SetDataAsync(room);
+            }
+
+            App.RoomId = room.Id;
             App.IsHost = true;
             App.TeamName = TeamName;
-            await RoomRef.GetDocument(id)
-                         .SetDataAsync(room);
-            TeamsRef = RoomRef.GetDocument(id)
+
+            TeamsRef = RoomRef.GetDocument(room.Id)
                               .GetCollection("Teams");
+
             await TeamsRef.GetDocument(TeamName)
                           .SetDataAsync(new Team { Name = TeamName, IsHost = true });
+
             SessionRef = CrossCloudFirestore.Current.Instance.GetCollection("GameRoom")
-                                                             .GetDocument(id)
+                                                             .GetDocument(room.Id)
                                                              .GetCollection("Session");
+
             await SessionRef.GetDocument("CurrentSession")
                             .SetDataAsync(new Session { IsActive = false, TimerStarted = false, NumberOfReadyTeams = 0 });
-            await NavigationService.NavigateAsync("/NavigationPage/MainPage");
+
+            var parameters = new NavigationParameters($"Title=GameRoom&Name={room.Id}&Password={room.Password}");
+            await NavigationService.NavigateAsync("/NavigationPage/MainPage", parameters);
         }
-        private string GeneratePassword(int length)
-        {
-            var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-            return new string(chars.OrderBy(o => Guid.NewGuid()).Take(length).ToArray());
-        }
-        private async Task<string> GenerateId() 
-        {
-            string code = null;
-            var request = await RoomRef.GetDocumentsAsync();
-            var ids = request.Documents.Select(d => d.Id).ToList();
-            var notUnique = true;
-            while (notUnique)
-            {
-                code = GeneratePassword(5);
-                notUnique = ids.Contains(code);
-            }
-            return RoomName + "_" + code;
-        } 
     }
 }
